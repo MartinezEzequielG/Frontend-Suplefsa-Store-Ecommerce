@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #ffffff;
+  --surface: #fafaf9;
+  --text: #1f2937;
+  --text-muted: #5f7777;
+  --border: #c1bb9b;
+
+  --accent: #3a4330;
+  --accent-2: #c1bb9b;
+  --accent-3: #5f7777;
+
+  --brand-green: #3a4330;
+  --brand-beige: #c1bb9b;
+  --brand-gray: #5f7777;
+
+  --font-heading: var(--font-geist-sans), system-ui, sans-serif;
+  --font-body: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.6;
+}
+
+h1, h2, h3 {
+  letter-spacing: -0.01em;
+  font-family: var(--font-heading);
+}
+
+a {
+  color: inherit;
+  transition: color .2s ease;
+}
+
+a:hover {
+  color: var(--accent);
+}
+
+::selection {
+  background: rgba(58, 67, 48, 0.18);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Cards */
+.product-card {
+  transition: transform 0.18s cubic-bezier(.4,0,.2,1), box-shadow 0.18s;
+  will-change: transform, box-shadow;
+}
+
+.product-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+.product-fadein {
+  animation: fadeInUp 0.65s cubic-bezier(.4,0,.2,1);
 }
