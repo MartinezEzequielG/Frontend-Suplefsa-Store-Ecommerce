@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { imageUrl } from '@/lib/backend';
 
 type Img = { url?: string };
@@ -11,11 +12,14 @@ export default function ProductGallery({ images }: { images: Img[] }) {
 
   return (
     <div className="space-y-3">
-      <div className="overflow-hidden rounded-lg border border-(--border) bg-(--surface)">
-        <img
+      <div className="relative overflow-hidden rounded-lg border border-(--border) bg-(--surface) aspect-square">
+        <Image
           src={current}
           alt=""
-          className="w-full h-auto object-cover transition-transform duration-300 hover:scale-[1.02]"
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover transition-transform duration-300 hover:scale-[1.02]"
+          priority
         />
       </div>
       {imgs.length > 1 && (

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { API, imageUrl } from '@/lib/backend';
 import { formatPrice } from '@/lib/format';
 import { cookies } from 'next/headers';
+import CheckoutSteps from '@/components/CheckoutSteps';
 
 async function fetchOrder(id: string) {
   const cookie = (await cookies()).toString();
@@ -43,27 +44,44 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   }
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      <h1 className="text-2xl font-semibold mb-2">¡Gracias por tu compra!</h1>
-      <p className="text-sm text-zinc-600 mb-6">Orden #{o.id} — Estado: {o.status}</p>
+      <div className="mb-4 space-y-2">
+        <CheckoutSteps step="done" />
+        <h1 className="text-2xl font-semibold mb-2">¡Gracias por tu compra!</h1>
+        <p className="text-sm text-zinc-600">Orden #{o.id} — Estado: {o.status}</p>
+      </div>
+
       <ul className="space-y-4">
         {(o.items || []).map((it: any) => (
           <li key={it.id} className="flex items-center gap-4 border rounded p-3 bg-white">
-            <img src={imageUrl(it.product?.images?.[0]?.url)} alt="" className="w-16 h-16 rounded bg-zinc-100 object-cover" />
+            <img
+              src={imageUrl(it.product?.images?.[0]?.url)}
+              alt=""
+              className="w-16 h-16 rounded bg-zinc-100 object-cover"
+            />
             <div className="flex-1">
               <p className="font-medium">{it.product?.name}</p>
-              {it.productVariant && <p className="text-xs text-zinc-500">Variante: {it.productVariant.sku ?? it.productVariant.id}</p>}
+              {it.productVariant && (
+                <p className="text-xs text-zinc-500">
+                  Variante: {it.productVariant.sku ?? it.productVariant.id}
+                </p>
+              )}
               <p className="text-xs text-zinc-500">Cantidad: {it.quantity}</p>
             </div>
             <div className="text-right">
               <p className="font-semibold">{formatPrice(it.unitPrice)}</p>
-              <p className="text-sm text-zinc-500">Subtotal: {formatPrice(Number(it.unitPrice) * it.quantity)}</p>
+              <p className="text-sm text-zinc-500">
+                Subtotal: {formatPrice(Number(it.unitPrice) * it.quantity)}
+              </p>
             </div>
           </li>
         ))}
       </ul>
+
       <div className="mt-6 flex items-center justify-between">
         <p className="text-lg font-semibold">Total: {formatPrice(o.total)}</p>
-        <Link href="/products" className="underline">Seguir comprando</Link>
+        <Link href="/products" className="underline">
+          Seguir comprando
+        </Link>
       </div>
     </main>
   );

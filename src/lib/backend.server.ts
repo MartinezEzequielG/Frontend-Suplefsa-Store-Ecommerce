@@ -1,4 +1,3 @@
-// src/lib/backend.server.ts
 import 'server-only';
 import { cookies } from 'next/headers';
 

@@ -1,21 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MiniCart from '@/components/MiniCart';
 
-const POPULAR = [
-  'vestidos',
-  'tops',
-  'jeans',
-  'polleras',
-  'bikinis',
-  'body',
-  'accesorios',
-];
-
 function Icon({ name, className }: { name: 'search' | 'menu' | 'close'; className?: string }) {
-  // SVGs simples, sin librerías
   if (name === 'search') {
     return (
       <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
@@ -43,196 +32,274 @@ function Icon({ name, className }: { name: 'search' | 'menu' | 'close'; classNam
   );
 }
 
-export function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+type HeaderProps = {
+  logoUrl?: string | null;
+  brandName?: string;
+};
+
+export function Header({ logoUrl, brandName = 'Suplementacion Formosa' }: HeaderProps) {
+  const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState('');
+  const [scrolled, setScrolled] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  const trimmed = q.trim();
-  const searchHref = useMemo(() => `/products?search=${encodeURIComponent(trimmed)}`, [trimmed]);
-
+  // Shadow al hacer scroll
   useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        setMobileOpen(false);
-        setSearchOpen(false);
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setSearchOpen(true);
-      }
+    function onScroll() {
+      setScrolled(window.scrollY > 16);
     }
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Foco automático en buscador
   useEffect(() => {
-    if (searchOpen) {
-      // enfoque inmediato para UX tipo “command palette”
-      setTimeout(() => inputRef.current?.focus(), 0);
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    if (searchOpen) setTimeout(() => inputRef.current?.focus(), 100);
+    document.body.style.overflow = searchOpen || mobileMenu ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
-  }, [searchOpen]);
+  }, [searchOpen, mobileMenu]);
+
+  // Cerrar overlays al navegar
+  useEffect(() => {
+    const handler = () => {
+      setMobileMenu(false);
+      setSearchOpen(false);
+    };
+    window.addEventListener('popstate', handler);
+    return () => window.removeEventListener('popstate', handler);
+  }, []);
+
+  const trimmed = q.trim();
+  const searchHref = `/products?search=${encodeURIComponent(trimmed)}`;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--border)] bg-[var(--bg)]">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex h-14 items-center justify-between gap-3">
-          {/* Left: mobile menu */}
+    <header
+      className={`
+        sf-header
+        sticky top-0 z-50 border-b
+        backdrop-blur-md
+        transition-all duration-300
+        ${
+          scrolled
+            ? 'bg-[#0a2540]/98 shadow-xl border-[#1565c0]/30' // azul sólido + sombra fuerte
+            : 'bg-gradient-to-br from-[#1565c0]/95 via-[#2196f3]/90 to-[#42a5f5]/85 border-white/10'
+        }
+      `}
+    >
+      <div className="mx-auto max-w-6xl px-2 sm:px-6">
+        <div
+          className={`
+            flex items-center justify-between relative
+            ${scrolled ? 'h-16 sm:h-16 lg:h-16' : 'h-20 sm:h-24 lg:h-28'}
+          `}
+        >
+          {/* Hamburguesa a la izquierda */}
           <button
             type="button"
-            className="md:hidden inline-flex items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-2.5 py-2 text-sm"
-            onClick={() => setMobileOpen(true)}
-            aria-label="Abrir menú"
-            aria-expanded={mobileOpen}
+            className="p-2 md:hidden flex items-center justify-center rounded-full hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
+            onClick={() => setMobileMenu(true)}
+            aria-label="Menú"
+            aria-expanded={mobileMenu}
+            style={{ minWidth: 44 }}
           >
-            <Icon name="menu" className="h-5 w-5" />
+            <Icon name="menu" className="h-6 w-6 text-white" />
           </button>
 
-          {/* Center: brand */}
+          {/* Logo centrado */}
           <Link
             href="/"
-            className="text-[13px] font-extrabold tracking-[0.28em] text-[var(--text)] uppercase"
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center select-none group"
             aria-label="Ir al inicio"
+            style={{ minWidth: 0 }}
           >
-            HAMSA
+            {logoUrl ? (
+              <span className="block group-hover:scale-105 transition-transform">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logoUrl}
+                  alt={brandName}
+                  className={`
+                    w-auto drop-shadow-2xl
+                    ${scrolled ? 'h-10 sm:h-10 lg:h-10' : 'h-14 sm:h-18 lg:h-20'}
+                  `}
+                />
+              </span>
+            ) : (
+              <span
+                className={`
+                  text-white drop-shadow-2xl leading-none font-extrabold tracking-[0.18em] group-hover:scale-105 transition-transform
+                  ${scrolled ? 'text-3xl sm:text-4xl lg:text-4xl' : 'text-5xl sm:text-6xl lg:text-7xl'}
+                `}
+              >
+                SF
+              </span>
+            )}
+
+            <span className="hidden md:block mt-1 text-xs font-semibold tracking-[0.22em] uppercase text-white/90">
+              {brandName}
+            </span>
           </Link>
 
-          {/* Right: actions */}
-          <div className="flex items-center gap-2">
+          {/* Acciones a la derecha */}
+          <div className="flex items-center gap-1 absolute right-0 top-1/2 -translate-y-1/2 z-10">
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm"
+              className="p-2 flex items-center justify-center rounded-full hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
               onClick={() => setSearchOpen(true)}
-              aria-label="Abrir búsqueda"
+              aria-label="Buscar"
+              style={{ minWidth: 44 }}
             >
-              <Icon name="search" className="h-5 w-5" />
-              <span className="hidden sm:inline">Buscar</span>
-              <span className="hidden sm:inline text-xs text-[var(--text-muted)] ml-1">Ctrl K</span>
+              <Icon name="search" className="h-6 w-6 text-white" />
             </button>
-
-            <Link href="/cart" className="inline-flex items-center gap-2 rounded-lg px-2 py-2">
-              <span className="sr-only">Carrito</span>
+            <Link
+              href="/cart"
+              className="p-2 flex items-center justify-center rounded-full hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
+              aria-label="Carrito"
+              style={{ minWidth: 44 }}
+            >
               <MiniCart />
             </Link>
           </div>
         </div>
-
-        {/* Desktop nav minimal (opcional) */}
-        <nav className="hidden md:flex items-center justify-center gap-7 pb-3 text-[13px] text-[var(--text)]">
-          <Link href="/products" className="hover:text-[var(--accent)]">Shop</Link>
-          <Link href="/about" className="hover:text-[var(--accent)]">Nosotros</Link>
-          <Link href="/contact" className="hover:text-[var(--accent)]">Contacto</Link>
-        </nav>
       </div>
 
-      {/* Mobile drawer */}
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50">
+      {/* Desktop nav */}
+      <nav className="hidden md:flex items-center justify-center gap-12 py-3 text-[17px] font-semibold text-white/95">
+        <Link
+          href="/products"
+          className="hover:text-white hover:scale-105 transition-all"
+        >
+          Catálogo
+        </Link>
+        <Link
+          href="/about"
+          className="hover:text-white hover:scale-105 transition-all"
+        >
+          Nosotros
+        </Link>
+        <Link
+          href="/contact"
+          className="hover:text-white hover:scale-105 transition-all"
+        >
+          Contacto
+        </Link>
+      </nav>
+
+      {/* Mobile menu bottom sheet */}
+      {mobileMenu && (
+        <div className="fixed inset-0 z-50 flex flex-col">
+          {/* overlay */}
           <button
             type="button"
-            className="absolute inset-0 bg-black/40"
+            className="flex-1 bg-black/55"
             aria-label="Cerrar menú"
-            onClick={() => setMobileOpen(false)}
+            onClick={() => setMobileMenu(false)}
           />
-          <div className="absolute left-0 top-0 h-full w-[290px] bg-[var(--surface)] border-r border-[var(--border)] p-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold">Menú</p>
+          {/* sheet */}
+          <div className="w-full bg-white rounded-t-3xl shadow-2xl border-t border-[var(--border)]">
+            <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-[var(--border)]">
+              <span className="text-lg font-semibold text-[var(--text)]">Menú</span>
               <button
                 type="button"
-                className="rounded-md px-2 py-2"
-                onClick={() => setMobileOpen(false)}
+                className="p-2 rounded-full hover:bg-zinc-100 focus:bg-zinc-100 transition"
+                onClick={() => setMobileMenu(false)}
                 aria-label="Cerrar"
               >
-                <Icon name="close" className="h-5 w-5" />
+                <Icon name="close" className="h-5 w-5 text-zinc-700" />
               </button>
             </div>
 
-            <nav className="mt-5 grid gap-3 text-sm">
-              <Link href="/products" onClick={() => setMobileOpen(false)} className="hover:text-[var(--accent)]">
-                Productos
+            <nav className="px-6 py-5 grid gap-4 text-base font-medium text-[var(--text)]">
+              <Link
+                href="/products"
+                onClick={() => setMobileMenu(false)}
+                className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-b-0"
+              >
+                <span>Catálogo</span>
               </Link>
-              <Link href="/about" onClick={() => setMobileOpen(false)} className="hover:text-[var(--accent)]">
-                Nosotros
+              <Link
+                href="/about"
+                onClick={() => setMobileMenu(false)}
+                className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-b-0"
+              >
+                <span>Nosotros</span>
               </Link>
-              <Link href="/contact" onClick={() => setMobileOpen(false)} className="hover:text-[var(--accent)]">
-                Contacto
+              <Link
+                href="/contact"
+                onClick={() => setMobileMenu(false)}
+                className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-b-0"
+              >
+                <span>Contacto</span>
               </Link>
-              <Link href="/cart" onClick={() => setMobileOpen(false)} className="hover:text-[var(--accent)]">
-                Carrito
+              <Link
+                href="/cart"
+                onClick={() => setMobileMenu(false)}
+                className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-b-0"
+              >
+                <span>Carrito</span>
+              </Link>
+              <Link
+                href="/account"
+                onClick={() => setMobileMenu(false)}
+                className="flex items-center justify-between py-1.5"
+              >
+                <span>Iniciar sesión</span>
               </Link>
             </nav>
           </div>
         </div>
       )}
 
-      {/* Search overlay (estilo “premium”) */}
+      {/* Search overlay */}
       {searchOpen && (
-        <div className="fixed inset-0 z-[60]">
+        <div className="fixed inset-0 z-50 flex flex-col">
           <button
             type="button"
-            className="absolute inset-0 bg-black/45"
+            className="flex-1 bg-black/55"
             aria-label="Cerrar búsqueda"
             onClick={() => setSearchOpen(false)}
           />
-
-          <div className="absolute left-1/2 top-10 w-[min(720px,92vw)] -translate-x-1/2 rounded-2xl border border-[var(--border)] bg-[var(--bg)] shadow-xl overflow-hidden">
-            <div className="flex items-center gap-2 border-b border-[var(--border)] px-4 py-3">
-              <Icon name="search" className="h-5 w-5 text-[var(--text-muted)]" />
-              <input
-                ref={inputRef}
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Buscar productos…"
-                className="w-full bg-transparent outline-none text-sm text-[var(--text)] placeholder:text-[var(--text-muted)]"
-              />
+          <div className="w-full bg-white rounded-t-3xl shadow-2xl border-t border-[var(--border)]">
+            <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-[var(--border)]">
+              <span className="text-lg font-semibold text-[var(--text)]">Buscar productos</span>
               <button
                 type="button"
+                className="p-2 rounded-full hover:bg-zinc-100 focus:bg-zinc-100 transition"
                 onClick={() => setSearchOpen(false)}
-                className="rounded-md px-2 py-1 text-xs text-[var(--text-muted)] hover:text-[var(--text)]"
+                aria-label="Cerrar"
               >
-                ESC
+                <Icon name="close" className="h-5 w-5 text-zinc-700" />
               </button>
             </div>
 
-            <div className="px-4 py-4">
-              <p className="text-[11px] font-extrabold tracking-[0.18em] uppercase text-[var(--text-muted)]">
-                Búsquedas populares
-              </p>
-
-              <div className="mt-3 flex flex-wrap gap-2">
-                {POPULAR.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setQ(t)}
-                    className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs hover:border-[var(--accent)] hover:text-[var(--accent)]"
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-
-              <div className="mt-5 flex items-center justify-between gap-3">
-                <p className="text-xs text-[var(--text-muted)]">
-                  Tip: Enter para buscar, ESC para cerrar.
-                </p>
-
-                <Link
-                  href={trimmed ? searchHref : '/products'}
-                  onClick={() => setSearchOpen(false)}
-                  className="rounded-lg bg-[var(--accent)] px-3 py-2 text-xs font-semibold text-white"
-                >
-                  Ver resultados
-                </Link>
-              </div>
-            </div>
+            <form
+              action={searchHref}
+              onSubmit={e => {
+                e.preventDefault();
+                if (trimmed) window.location.href = searchHref;
+              }}
+              className="px-6 py-5 flex gap-2"
+            >
+              <input
+                ref={inputRef}
+                value={q}
+                onChange={e => setQ(e.target.value)}
+                type="text"
+                placeholder="Buscar proteínas, creatina, etc."
+                className="input-bordered input w-full rounded-md pr-10 text-base py-2.5"
+                aria-label="Buscar productos"
+              />
+              <button
+                type="submit"
+                className="btn-primary btn rounded-md px-4 text-sm font-semibold"
+                disabled={!trimmed}
+              >
+                Buscar
+              </button>
+            </form>
           </div>
         </div>
       )}
