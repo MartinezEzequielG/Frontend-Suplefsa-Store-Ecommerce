@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { backendFetch } from '@/lib/backend';
 import { ProductCard } from '@/components/ProductCard';
+import { getSiteConfig } from '@/lib/site';
 
 export default async function ProductsList({ searchParams }: { searchParams: Promise<{ q?: string; category?: string; page?: string; sort?: string }> }) {
   try {
@@ -9,10 +10,13 @@ export default async function ProductsList({ searchParams }: { searchParams: Pro
     if (q) qs.set('search', q);
     if (category) qs.set('categorySlug', category);
 
-    const [{ items, total }, categories] = await Promise.all([
+    const [site, productsRes, categories] = await Promise.all([
+      getSiteConfig(),
       backendFetch<{ items: any[]; total: number }>(`/products?${qs.toString()}`),
       backendFetch<any[]>('/categories/tree'),
     ]);
+
+    const { items, total } = productsRes;
 
     return (
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-10 grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6 md:gap-8">
@@ -131,7 +135,14 @@ export default async function ProductsList({ searchParams }: { searchParams: Pro
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5 mt-2">
-              {items.map((p) => <ProductCard key={p.id} p={p} />)}
+              {items.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  p={p}
+                  checkoutMode={site?.checkoutMode}
+                  whatsappNumber={site?.whatsappNumber}
+                />
+              ))}
             </div>
           )}
 

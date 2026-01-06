@@ -3,6 +3,8 @@ import { formatPrice } from '@/lib/format';
 import { cartGetServer } from '@/lib/cart-server';
 import { imageUrl } from '@/lib/backend';
 import CheckoutSteps from '@/components/CheckoutSteps';
+import { redirect } from 'next/navigation';
+import { isCartEnabled } from '@/lib/checkoutMode';
 
 function variantLabel(it: any) {
   const vals =
@@ -12,6 +14,9 @@ function variantLabel(it: any) {
 }
 
 export default async function CartPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const enabled = await isCartEnabled();
+  if (!enabled) redirect('/products');
+
   const { error = '' } = await searchParams;
   const cart = await cartGetServer();
   const items = cart.items || [];

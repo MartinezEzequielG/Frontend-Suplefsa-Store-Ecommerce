@@ -6,5 +6,12 @@ export async function HeaderShell() {
   const site = await getSiteConfig();
   const logo = site?.logoUrl ? imageUrl(site.logoUrl) : null;
   const brandName = site?.name || 'Suplementacion Formosa';
-  return <Header logoUrl={logo} brandName={brandName} />;
+
+  return (
+    <Header
+      logoUrl={logo}
+      brandName={brandName}
+      checkoutMode={site?.checkoutMode} // ✅ pasar modo
+    />
+  );
 }

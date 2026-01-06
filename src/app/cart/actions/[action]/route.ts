@@ -1,7 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isCartEnabled } from '@/lib/checkoutMode';
 import { API } from '@/lib/backend';
 
+async function denyIfCatalog(req: NextRequest) {
+  const enabled = await isCartEnabled();
+  if (enabled) return null;
+
+  // si viene de form POST, redirigimos al catálogo
+  const accept = req.headers.get('accept') || '';
+  if (accept.includes('text/html')) {
+    return NextResponse.redirect(new URL('/products', req.url), { status: 303 });
+  }
+
+  return NextResponse.json(
+    { message: 'Checkout deshabilitado: modo catálogo.' },
+    { status: 403 },
+  );
+}
+
 export async function POST(req: NextRequest, { params }: { params: Promise<{ action: string }> }) {
+  const denied = await denyIfCatalog(req);
+  if (denied) return denied;
+
   const { action } = await params;
   const url = new URL(req.url);
   const cookie = req.headers.get('cookie') || '';
@@ -94,4 +114,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
     resp.cookies.set('sid', sid, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 24 * 30 });
     return resp;
   }
+}
+
+export async function GET(req: NextRequest, ctx: any) {
+  const denied = await denyIfCatalog(req);
+  if (denied) return denied;
+
+  // ...existing code...
 }

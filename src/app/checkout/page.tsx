@@ -1,13 +1,14 @@
 import { redirect } from 'next/navigation';
+import { isCartEnabled } from '@/lib/checkoutMode';
 import CheckoutSteps from '@/components/CheckoutSteps';
 import CheckoutSidebar from '@/components/CheckoutSidebar';
 import { cartGetServer } from '@/lib/cart-server';
 
-export default async function CheckoutPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
+export default async function CheckoutPage(props: any) {
+  const enabled = await isCartEnabled();
+  if (!enabled) redirect('/products');
+
+  const { searchParams } = props;
   const { error = '' } = await searchParams;
 
   const cart = await cartGetServer();

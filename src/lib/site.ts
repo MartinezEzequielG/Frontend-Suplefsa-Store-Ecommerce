@@ -12,8 +12,11 @@ export type SiteConfig = {
   updatedAt?: string;
   banners?: any[];
   socialLinks?: any[];
-  whatsappNumber?: string; // <--- agrega esto
-  address?: string;        // <--- agrega esto
+  whatsappNumber?: string;
+  address?: string;
+
+  // ✅ nuevo
+  checkoutMode?: 'CATALOG' | 'CART';
 };
 
 export async function getSiteConfig() {

@@ -2,8 +2,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/format';
 import { imageUrl } from '@/lib/backend';
+import { cartEnabledFrom } from '@/lib/checkoutMode';
 
-export function ProductCard({ p, idx }: any) {
+export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
+  const cartEnabled = cartEnabledFrom(checkoutMode);
+  const waDigits = whatsappNumber ? String(whatsappNumber).replace(/\D/g, '') : '';
+
   const hasTransfer = p.discountTransfer && p.discountTransfer > 0;
   const hasMp = p.discountMp && p.discountMp > 0;
   const transferPrice = hasTransfer
@@ -116,23 +120,41 @@ export function ProductCard({ p, idx }: any) {
           )}
         </div>
         {/* CTA */}
-        <button
-          style={{
-            marginTop: 8,
-            background: '#2563eb',
-            color: '#fff',
-            borderRadius: 8,
-            padding: '10px 0',
-            fontWeight: 600,
-            fontSize: 16,
-            border: 'none',
-            cursor: 'pointer',
-            width: '100%',
-          }}
-          type="button"
-        >
-          Comprar ahora
-        </button>
+        {cartEnabled ? (
+          <button
+            style={{
+              marginTop: 8,
+              background: '#2563eb',
+              color: '#fff',
+              borderRadius: 8,
+              padding: '10px 0',
+              fontWeight: 600,
+              fontSize: 16,
+              border: 'none',
+              cursor: 'pointer',
+              width: '100%',
+            }}
+            type="button"
+          >
+            Agregar al carrito
+          </button>
+        ) : waDigits ? (
+          <a
+            href={`https://wa.me/${waDigits}?text=${encodeURIComponent(`Hola! Quiero pedir: ${p.name}`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[#25d366] hover:bg-[#1ebe57] text-white px-4 py-2 text-sm font-semibold transition"
+          >
+            Pedilo por WhatsApp
+          </a>
+        ) : (
+          <Link
+            href={`/products/${p.slug}`}
+            className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-semibold transition"
+          >
+            Ver producto
+          </Link>
+        )}
       </div>
     </Link>
   );

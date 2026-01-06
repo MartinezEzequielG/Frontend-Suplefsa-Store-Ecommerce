@@ -132,7 +132,13 @@ export default async function Home() {
 
         <div className="grid grid-cols-2 gap-4 sm:gap-5 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((p, idx) => (
-            <ProductCard key={p.id} p={p} idx={idx} />
+            <ProductCard
+              key={p.id}
+              p={p}
+              idx={idx}
+              checkoutMode={site?.checkoutMode}
+              whatsappNumber={site?.whatsappNumber}
+            />
           ))}
         </div>
 

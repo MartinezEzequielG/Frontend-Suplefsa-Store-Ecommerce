@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import { getSiteConfig } from '@/lib/site';
+import { cartEnabledFrom } from '@/lib/checkoutMode';
 
 export async function Footer() {
   const site = await getSiteConfig();
+  const cartEnabled = cartEnabledFrom((site as any)?.checkoutMode);
   const year = new Date().getFullYear();
 
   const brandName = site?.name || 'Suplementacion Formosa';

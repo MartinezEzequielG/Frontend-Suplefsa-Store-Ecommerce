@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import MiniCart from '@/components/MiniCart';
+import { cartEnabledFrom } from '@/lib/checkoutMode';
 
 function Icon({ name, className }: { name: 'search' | 'menu' | 'close'; className?: string }) {
   if (name === 'search') {
@@ -35,9 +36,11 @@ function Icon({ name, className }: { name: 'search' | 'menu' | 'close'; classNam
 type HeaderProps = {
   logoUrl?: string | null;
   brandName?: string;
+  checkoutMode?: 'CATALOG' | 'CART'; // ✅ nuevo
 };
 
-export function Header({ logoUrl, brandName = 'Suplementacion Formosa' }: HeaderProps) {
+export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkoutMode }: HeaderProps) {
+  const cartEnabled = cartEnabledFrom(checkoutMode);
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState('');
@@ -154,14 +157,16 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa' }: Header
             >
               <Icon name="search" className="h-6 w-6 text-white" />
             </button>
-            <Link
-              href="/cart"
-              className="p-2 flex items-center justify-center rounded-full hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
-              aria-label="Carrito"
-              style={{ minWidth: 44 }}
-            >
-              <MiniCart />
-            </Link>
+            {cartEnabled && (
+              <Link
+                href="/cart"
+                className="p-2 flex items-center justify-center rounded-full hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
+                aria-label="Carrito"
+                style={{ minWidth: 44 }}
+              >
+                <MiniCart />
+              </Link>
+            )}
           </div>
         </div>
       </div>

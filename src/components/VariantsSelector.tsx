@@ -6,36 +6,35 @@ type ProductOption = { id: number; name: string; values: { id: number; value: st
 
 type Variant = {
   id: number;
-  // Nuevo modelo
   onHand?: number | null;
   reserved?: number | null;
-
-  // Legacy (por si algún endpoint aún lo devuelve)
   stock?: number | null;
-
   options?: { optionValue?: { id: number; value: string } | null }[];
 };
 
 function availableQty(v: Variant) {
-  // preferimos onHand/reserved; fallback a stock
-  if (typeof v.onHand === 'number' || typeof v.reserved === 'number') {
-    const onHand = v.onHand ?? 0;
-    const reserved = v.reserved ?? 0;
-    return onHand - reserved;
-  }
-  return v.stock ?? 0;
+  const onHand = Number(v.onHand ?? 0);
+  const reserved = Number(v.reserved ?? 0);
+  const legacy = Number(v.stock ?? 0);
+  // prioriza modelo nuevo
+  if (v.onHand != null || v.reserved != null) return Math.max(0, onHand - reserved);
+  return Math.max(0, legacy);
 }
 
 export default function VariantsSelector({
   options,
   variants,
+  mode = 'CART',
+  whatsappNumber,
+  productName,
 }: {
   options: ProductOption[];
   variants: Variant[];
+  mode?: 'CATALOG' | 'CART';
+  whatsappNumber?: string;
+  productName?: string;
 }) {
-  const inStock = useMemo(() => {
-    return (variants || []).filter((v) => availableQty(v) > 0);
-  }, [variants]);
+  const inStock = useMemo(() => (variants || []).filter((v) => availableQty(v) > 0), [variants]);
 
   const [sel, setSel] = useState<Record<number, number | ''>>(() => {
     const init: Record<number, number | ''> = {};
@@ -47,7 +46,6 @@ export default function VariantsSelector({
 
   const matchedVariant = useMemo(() => {
     if (!options?.length) return null;
-    // requiere 1 valor por opción
     if (selectedValueIds.length !== options.length) return null;
 
     const desiredKey = [...selectedValueIds].sort((a, b) => a - b).join('-');
@@ -68,6 +66,42 @@ export default function VariantsSelector({
 
   const matchedVariantId = matchedVariant?.id ?? '';
   const matchedAvailable = matchedVariant ? availableQty(matchedVariant) : 0;
+
+  // ✅ Texto humano de la variante (ej: "Chocolate / 2 kg")
+  const selectedLabel = useMemo(() => {
+    if (!options?.length) return '';
+    if (selectedValueIds.length !== options.length) return '';
+
+    const parts = options
+      .map((opt) => {
+        const valueId = sel[opt.id];
+        if (typeof valueId !== 'number') return null;
+        const v = opt.values.find((x) => x.id === valueId);
+        return v?.value ?? null;
+      })
+      .filter(Boolean) as string[];
+
+    return parts.join(' / ');
+  }, [options, sel, selectedValueIds.length]);
+
+  const waDigits = useMemo(
+    () => (whatsappNumber ? whatsappNumber.replace(/\D/g, '') : ''),
+    [whatsappNumber],
+  );
+
+  const waUrl = useMemo(() => {
+    if (!waDigits) return '';
+
+    const lines: string[] = [];
+    lines.push('Hola! Quiero pedir este producto.');
+    if (productName) lines.push(`Producto: ${productName}`);
+
+    // ✅ Enviar descripción en vez del id interno
+    if (matchedVariantId && selectedLabel) lines.push(`Variante: ${selectedLabel}`);
+
+    const text = lines.join('\n');
+    return `https://wa.me/${waDigits}?text=${encodeURIComponent(text)}`;
+  }, [waDigits, productName, matchedVariantId, selectedLabel]);
 
   if (!options?.length || !variants?.length) return null;
 
@@ -97,21 +131,43 @@ export default function VariantsSelector({
         </label>
       ))}
 
-      {/* Enviamos variantId al carrito */}
       <input type="hidden" name="variantId" value={matchedVariantId} />
 
-      <button
-        type="submit"
-        className="w-full bg-(--accent) text-white font-semibold py-3 rounded-md hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-        disabled={!matchedVariantId}
-      >
-        Agregar al carrito
-      </button>
+      {mode === 'CATALOG' ? (
+        waDigits ? (
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full inline-flex items-center justify-center bg-[#25d366] hover:bg-[#1ebe57] text-white font-semibold py-3 rounded-md transition disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-disabled={!matchedVariantId}
+            onClick={(e) => {
+              if (!matchedVariantId) e.preventDefault();
+            }}
+          >
+            Pedilo por WhatsApp
+          </a>
+        ) : (
+          <button
+            type="button"
+            className="w-full bg-zinc-200 text-zinc-700 font-semibold py-3 rounded-md cursor-not-allowed"
+            disabled
+          >
+            WhatsApp no configurado
+          </button>
+        )
+      ) : (
+        <button
+          type="submit"
+          className="w-full bg-(--accent) text-white font-semibold py-3 rounded-md hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!matchedVariantId}
+        >
+          Agregar al carrito
+        </button>
+      )}
 
       {!matchedVariantId ? (
-        <p className="text-xs text-red-600">
-          Elegí una combinación válida (con stock) para continuar.
-        </p>
+        <p className="text-xs text-red-600">Elegí una combinación válida (con stock) para continuar.</p>
       ) : (
         <p className="text-xs text-(--text-muted)">
           Stock disponible: <strong>{matchedAvailable}</strong>
