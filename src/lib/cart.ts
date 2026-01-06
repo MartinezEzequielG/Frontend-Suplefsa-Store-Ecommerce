@@ -1,5 +1,22 @@
 import { API } from './backend';
 
+export type CheckoutPayload = {
+  shipping: {
+    fullName: string;
+    email?: string;
+    phone: string;
+    street: string;
+    city: string;
+    state: string;
+    zip?: string;
+    country?: string;
+  };
+  shippingCost: number;
+  paymentMethod?: string;
+  // se usa en el backend para identificar carrito guest (sid)
+  sessionToken?: string;
+};
+
 export async function cartGet() {
   // usa la API local para preservar cookies en SSR
   const res = await fetch('/api/cart', { cache: 'no-store' });
@@ -51,13 +68,13 @@ export async function checkoutCreate(payload: CheckoutPayload) {
   });
 
   const text = await res.text();
-  console.log('Checkout response:', res.status, res.statusText, text); // <-- agrega esto
+  console.log('Checkout response:', res.status, res.statusText, text);
 
   if (!res.ok) throw new Error(text || `Error HTTP ${res.status}`);
   if (!text) throw new Error('Respuesta vacía del backend');
   try {
     return JSON.parse(text);
-  } catch (e) {
+  } catch {
     throw new Error(`Respuesta no es JSON: ${text.slice(0, 300)}`);
   }
 }
