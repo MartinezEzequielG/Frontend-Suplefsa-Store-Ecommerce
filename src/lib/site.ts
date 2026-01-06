@@ -15,10 +15,9 @@ export type SiteConfig = {
   whatsappNumber?: string;
   address?: string;
 
-  // ✅ nuevo
   checkoutMode?: 'CATALOG' | 'CART';
 };
 
-export async function getSiteConfig() {
-  return backendFetch('/content/site', { cache: 'no-store' });
+export async function getSiteConfig(): Promise<SiteConfig> {
+  return backendFetch<SiteConfig>('/content/site', { cache: 'no-store' });
 }

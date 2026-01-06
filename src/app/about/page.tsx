@@ -1,7 +1,7 @@
-import { getSiteConfig } from '@/lib/site';
+import { getSiteConfig, type SiteConfig } from '@/lib/site';
 
 export default async function AboutPage() {
-  const site = await getSiteConfig();
+  const site: SiteConfig = await getSiteConfig();
   const brandName = site?.name || 'Suplementacion Formosa';
 
   return (
