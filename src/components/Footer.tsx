@@ -2,18 +2,25 @@ import Link from 'next/link';
 import { getSiteConfig } from '@/lib/site';
 import { cartEnabledFrom } from '@/lib/checkoutMode';
 import InnovaBrand from '@/components/InnovaBrand';
+import InstagramLink from '@/components/InstagramLink';
 
 export async function Footer() {
   const site = await getSiteConfig();
-  const cartEnabled = cartEnabledFrom((site as any)?.checkoutMode);
   const year = new Date().getFullYear();
-
   const brandName = site?.name || 'Suplementacion Formosa';
-  const logoUrl = site?.logoUrl || null;
+  const logoUrl = site?.logoUrl;
+  const cartEnabled = cartEnabledFrom(site?.checkoutMode);
+  const contactEmail = site?.contactEmail;
+  const address = site?.address;
+  const whatsapp = site?.whatsappNumber;
+
   const socials = (site?.socialLinks || []).filter((s: any) => s?.url);
-  const address = site?.address || '';
-  const whatsapp = site?.whatsappNumber || '';
-  const contactEmail = site?.contactEmail || '';
+
+  const isInstagram = (s: any) => String(s?.label || '').toLowerCase().includes('instagram');
+
+  const instagramLinks = socials.filter(isInstagram);
+  const otherSocials = socials.filter((s: any) => !isInstagram(s));
+
   const waDigits = whatsapp ? whatsapp.replace(/\D/g, '') : '';
 
   return (
@@ -138,22 +145,32 @@ export async function Footer() {
               </form>
 
               {/* Redes sociales */}
-              {socials.length > 0 && (
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 mb-2 sm:mb-3">Seguinos</p>
-                  <div className="flex flex-wrap gap-2">
-                    {socials.map((s: any) => (
-                      <a
-                        key={s.id}
-                        href={s.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 sm:px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-200 rounded-full hover:border-blue-400 hover:text-blue-600 hover:shadow-sm transition"
-                      >
-                        {s.label}
-                      </a>
+              {instagramLinks.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">Seguinos</p>
+                  {/* si hay más de uno, mostrarlos todos */}
+                  <div className="flex flex-wrap gap-3">
+                    {instagramLinks.map((s: any) => (
+                      <InstagramLink key={s.id} url={s.url} size={22} />
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* Mostrar el resto (SIN Instagram para que no se duplique) */}
+              {otherSocials.length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                  {otherSocials.map((s: any) => (
+                    <a
+                      key={s.id}
+                      href={s.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-gray-700 hover:text-blue-600 transition"
+                    >
+                      {s.label}
+                    </a>
+                  ))}
                 </div>
               )}
             </div>

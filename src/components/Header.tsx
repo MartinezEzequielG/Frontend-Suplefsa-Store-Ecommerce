@@ -36,7 +36,7 @@ function Icon({ name, className }: { name: 'search' | 'menu' | 'close'; classNam
 type HeaderProps = {
   logoUrl?: string | null;
   brandName?: string;
-  checkoutMode?: 'CATALOG' | 'CART'; // ✅ nuevo
+  checkoutMode?: 'CATALOG' | 'CART';
 };
 
 export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkoutMode }: HeaderProps) {
@@ -87,7 +87,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
         transition-all duration-300
         ${
           scrolled
-            ? 'bg-[#0a2540]/98 shadow-xl border-[#1565c0]/30' // azul sólido + sombra fuerte
+            ? 'bg-[#0a2540]/98 shadow-xl border-[#1565c0]/30'
             : 'bg-gradient-to-br from-[#1565c0]/95 via-[#2196f3]/90 to-[#42a5f5]/85 border-white/10'
         }
       `}
@@ -171,23 +171,41 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
         </div>
       </div>
 
-      {/* Desktop nav */}
-      <nav className="hidden md:flex items-center justify-center gap-12 py-3 text-[17px] font-semibold text-white/95">
+      {/* Desktop nav - con hover mejorado */}
+      <nav className="hidden md:flex items-center justify-center gap-8 py-3 text-[17px] font-semibold text-white/95">
         <Link
           href="/products"
-          className="hover:text-white hover:scale-105 transition-all"
+          className="
+            relative px-4 py-2 rounded-lg
+            transition-all duration-200
+            hover:text-white hover:bg-white/15
+            focus:bg-white/20 focus:outline-none
+            active:scale-95
+          "
         >
           Catálogo
         </Link>
         <Link
           href="/about"
-          className="hover:text-white hover:scale-105 transition-all"
+          className="
+            relative px-4 py-2 rounded-lg
+            transition-all duration-200
+            hover:text-white hover:bg-white/15
+            focus:bg-white/20 focus:outline-none
+            active:scale-95
+          "
         >
           Nosotros
         </Link>
         <Link
           href="/contact"
-          className="hover:text-white hover:scale-105 transition-all"
+          className="
+            relative px-4 py-2 rounded-lg
+            transition-all duration-200
+            hover:text-white hover:bg-white/15
+            focus:bg-white/20 focus:outline-none
+            active:scale-95
+          "
         >
           Contacto
         </Link>

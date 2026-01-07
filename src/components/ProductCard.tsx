@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { formatPrice } from '@/lib/format';
@@ -10,131 +12,123 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
 
   const hasTransfer = p.discountTransfer && p.discountTransfer > 0;
   const hasMp = p.discountMp && p.discountMp > 0;
-  const transferPrice = hasTransfer
-    ? Math.round((p.salePrice ?? p.basePrice) * (1 - p.discountTransfer / 100))
-    : null;
-  const mpPrice = hasMp
-    ? Math.round((p.salePrice ?? p.basePrice) * (1 - p.discountMp / 100))
-    : null;
+
+  const base = p.salePrice ?? p.basePrice;
+
+  const transferPrice = hasTransfer ? Math.round(base * (1 - p.discountTransfer / 100)) : null;
+  const mpPrice = hasMp ? Math.round(base * (1 - p.discountMp / 100)) : null;
 
   return (
-    <Link
-      href={`/products/${p.slug}`}
-      className="group block overflow-hidden rounded-2xl border border-[var(--border)] bg-white transition hover:border-[var(--accent)]"
-      style={{
-        animationDelay: `${idx * 60}ms`,
-        display: 'flex',
-        flexDirection: 'column',
-        borderRadius: 12,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-        background: '#fff',
-        overflow: 'hidden',
-        minWidth: 0,
-      }}
-    >
-      <div
-        className="relative"
-        style={{
-          width: '100%',
-          aspectRatio: '1/1',
-          background: '#f8fafc',
-        }}
-      >
-        <Image
-          src={imageUrl(p.images?.[0]?.url)}
-          alt={p.name}
-          fill
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-          className="object-cover"
-          priority={idx < 4}
-        />
-        {/* Opcional: iconos en vez de badges */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 8,
-            left: 8,
-            display: 'flex',
-            gap: 6,
-            zIndex: 10,
-          }}
-        >
-          {p.isNew && (
-            <span title="Nuevo" style={{ fontSize: 18 }}>🆕</span>
-          )}
-          {p.isHot && (
-            <span title="Más vendido" style={{ fontSize: 18 }}>🔥</span>
-          )}
-          {p.freeShipping && (
-            <span title="Envío gratis" style={{ fontSize: 18 }}>🚚</span>
+    <div className="bg-white border border-[var(--border)] rounded-xl overflow-hidden transition hover:border-[var(--accent)] hover:shadow-sm">
+      {/* ✅ Parte clickeable (sin anidar botones/links adentro) */}
+      <Link href={`/products/${p.slug}`} className="block">
+        {/* Imagen */}
+        <div className="relative aspect-square bg-zinc-50">
+          <Image
+            src={imageUrl(p.images?.[0]?.url)}
+            alt={p.name}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            className="object-cover"
+            priority={idx < 4}
+          />
+
+          {/* Badges minimalistas (sin emojis) */}
+          {(p.isNew || p.isHot || p.freeShipping) && (
+            <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
+              {p.isNew && (
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-blue-600 text-white shadow-sm">
+                  NUEVO
+                </span>
+              )}
+              {p.isHot && (
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-[var(--accent)] text-white shadow-sm">
+                  HOT
+                </span>
+              )}
+              {p.freeShipping && (
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-green-600 text-white shadow-sm">
+                  ENVÍO
+                </span>
+              )}
+            </div>
           )}
         </div>
-      </div>
-      <div style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        <h3 style={{ fontWeight: 600, fontSize: 16, marginBottom: 2 }}>{p.name}</h3>
-        {p.description && (
-          <p style={{
-            fontSize: 13,
-            color: '#666',
-            marginBottom: 2,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}>
-            {p.description}
-          </p>
-        )}
-        {/* Precios claros */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {hasTransfer ? (
-            <>
-              <span style={{ color: '#888', textDecoration: 'line-through', fontSize: 14 }}>
-                {formatPrice(p.salePrice ?? p.basePrice)}
-              </span>
-              <span style={{ color: '#059669', fontWeight: 700, fontSize: 18 }}>
-                {formatPrice(transferPrice)}
-              </span>
-              <span style={{ fontSize: 13, color: '#059669', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ fontSize: 16 }}>💸</span>
-                Pagando por transferencia
-              </span>
-            </>
-          ) : hasMp ? (
-            <>
-              <span style={{ color: '#888', textDecoration: 'line-through', fontSize: 14 }}>
-                {formatPrice(p.salePrice ?? p.basePrice)}
-              </span>
-              <span style={{ color: '#2563eb', fontWeight: 700, fontSize: 18 }}>
-                {formatPrice(mpPrice)}
-              </span>
-              <span style={{ fontSize: 13, color: '#2563eb', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ fontSize: 16 }}>💳</span>
-                Pagando con MercadoPago
-              </span>
-            </>
-          ) : (
-            <span style={{ color: '#111', fontWeight: 700, fontSize: 18 }}>
-              {formatPrice(p.salePrice ?? p.basePrice)}
-            </span>
-          )}
+
+        {/* Info */}
+        <div className="p-3">
+          <h3 className="font-semibold text-[15px] leading-snug text-[var(--text)] line-clamp-2 min-h-[2.5rem]">
+            {p.name}
+          </h3>
+
+          {/* Descripción: ocultar en mobile para que el grid quede prolijo */}
+          {p.description ? (
+            <p className="hidden sm:block mt-1 text-xs text-[var(--text-muted)] line-clamp-2">
+              {p.description}
+            </p>
+          ) : null}
+
+          {/* Precio */}
+          <div className="mt-2">
+            {hasTransfer ? (
+              <>
+                <div className="text-xs text-gray-400 line-through">{formatPrice(base)}</div>
+                <div className="text-lg font-extrabold text-green-600">{formatPrice(transferPrice)}</div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-green-700">
+                  {/* Ícono billete minimalista */}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="7" width="18" height="10" rx="2" />
+                    <circle cx="12" cy="12" r="2" />
+                  </svg>
+                  Transferencia
+                </div>
+              </>
+            ) : hasMp ? (
+              <>
+                <div className="text-xs text-gray-400 line-through">{formatPrice(base)}</div>
+                <div className="text-lg font-extrabold text-blue-600">{formatPrice(mpPrice)}</div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-blue-700">
+                  {/* Ícono tarjeta minimalista (reemplaza 💳) */}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="6" width="18" height="12" rx="2" />
+                    <path d="M3 10h18" />
+                  </svg>
+                  MercadoPago
+                </div>
+              </>
+            ) : (
+              <div className="text-lg font-extrabold text-[var(--text)]">{formatPrice(base)}</div>
+            )}
+          </div>
         </div>
-        {/* CTA */}
+      </Link>
+
+      {/* ✅ CTA separado (evita bugs de tap en mobile) */}
+      <div className="px-3 pb-3">
         {cartEnabled ? (
           <button
-            style={{
-              marginTop: 8,
-              background: '#2563eb',
-              color: '#fff',
-              borderRadius: 8,
-              padding: '10px 0',
-              fontWeight: 600,
-              fontSize: 16,
-              border: 'none',
-              cursor: 'pointer',
-              width: '100%',
-            }}
             type="button"
+            className="w-full rounded-lg bg-blue-600 text-white font-semibold py-2 text-sm hover:bg-blue-700 transition"
           >
             Agregar al carrito
           </button>
@@ -143,19 +137,50 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
             href={`https://wa.me/${waDigits}?text=${encodeURIComponent(`Hola! Quiero pedir: ${p.name}`)}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-[#25d366] hover:bg-[#1ebe57] text-white px-4 py-2 text-sm font-semibold transition"
+            className="
+              wa-cta
+              relative overflow-hidden
+              w-full inline-flex items-center justify-center gap-2
+              rounded-lg
+              px-3 py-2
+              text-[13px] font-semibold
+              text-white
+              border border-black/5
+              bg-[#25d366]
+              shadow-[0_6px_14px_rgba(16,185,129,0.18)]
+              active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(16,185,129,0.16)]
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#25d366]
+
+              before:content-[''] before:absolute before:inset-0
+              before:bg-gradient-to-b before:from-white/18 before:to-transparent
+              before:pointer-events-none
+
+              sm:bg-gradient-to-br sm:from-[#25d366] sm:to-[#128c7e]
+              sm:hover:from-[#20ba5a] sm:hover:to-[#0f7a6a]
+              sm:transition
+            "
           >
-            Pedilo por WhatsApp
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+              className="opacity-95 sm:w-[18px] sm:h-[18px]"
+            >
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+            Pedir por WhatsApp
           </a>
         ) : (
           <Link
             href={`/products/${p.slug}`}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-md bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-semibold transition"
+            className="w-full inline-flex items-center justify-center rounded-lg border border-[var(--border)] py-2 text-sm font-semibold text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition"
           >
             Ver producto
           </Link>
         )}
       </div>
-    </Link>
+    </div>
   );
 }

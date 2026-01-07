@@ -12,7 +12,7 @@ export default async function AboutPage() {
           {brandName}
         </h1>
         <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
-          Más de <strong>X años</strong> acompañando tu progreso con suplementación deportiva de calidad.
+          Más de <strong>3 años</strong> acompañando y suplementando a todo un país.
         </p>
       </section>
 
@@ -25,16 +25,12 @@ export default async function AboutPage() {
               <p>
                 En <strong>{brandName}</strong>, nacimos con una misión simple pero poderosa:
                 llevar suplementación deportiva de primera línea a cada atleta, desde principiantes
-                hasta profesionales, en toda la provincia.
+                hasta profesionales, en toda la Argentina.
               </p>
               <p>
-                Comenzamos como un pequeño local en Formosa, impulsados por la pasión del deporte
-                y el deseo de ayudar a nuestra comunidad a alcanzar sus objetivos fitness.
-                Hoy, seguimos siendo ese espacio de confianza donde cada producto está
-                cuidadosamente seleccionado.
-              </p>
-              <p>
-                No vendemos humo: vendemos <strong>resultados reales</strong>.
+                Comenzamos con pocos suplementos en un showroom pero con un objetivo en claro, ser los mejores en este ámbito así ayudando a miles de Argentinos.
+                Hoy en día contamos con 2 locales en Formosa capital y cientos de envíos por mes a todo el país.
+                Así eligiéndonos en cada rincón de la Argentina
               </p>
             </div>
           </div>
