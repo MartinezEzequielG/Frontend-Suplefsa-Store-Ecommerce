@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { getSiteConfig } from '@/lib/site';
 import { cartEnabledFrom } from '@/lib/checkoutMode';
+import InnovaBrand from '@/components/InnovaBrand';
 
 export async function Footer() {
   const site = await getSiteConfig();
@@ -167,17 +168,7 @@ export async function Footer() {
               © {year} <span className="font-semibold text-gray-700">{brandName}</span> — Todos los derechos reservados.
             </p>
             
-            <a
-              href="https://innova-webdev.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition group w-fit"
-            >
-              <span>Desarrollado por</span>
-              <span className="font-bold text-gray-900 group-hover:text-blue-600 transition">
-                Innova
-              </span>
-            </a>
+            <InnovaBrand className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition group w-fit" />
           </div>
         </div>
       </div>

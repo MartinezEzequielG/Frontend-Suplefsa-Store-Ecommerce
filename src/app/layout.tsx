@@ -20,14 +20,14 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Suplementacion Formosa Store",
+    default: "Suplementacion Formosa",
     template: "%s | Suplementacion Formosa",
   },
   description:
-    "Tienda online de Suplementacion Formosa. Suplementación deportiva de calidad, envíos en Formosa y asesoramiento personalizado.",
+    "Tienda online de Suplementacion Formosa. Suplementación deportiva de calidad, envíos a todo el país y asesoramiento personalizado.",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [{ url: "/favicon.ico" }, { url: "/icon.png", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png" }],
   },
   openGraph: {
     type: "website",
@@ -51,10 +51,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>
+    <html lang="es">
+      <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <HeaderShell />
-        <main>{children}</main>
+        {children}
         <Footer />
         <WhatsappFloatButton />
       </body>
