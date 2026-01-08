@@ -15,9 +15,9 @@ export default async function ContactPage() {
 
   const locations = [
     {
-      name: 'Showroom Norte',
-      address: 'Av. Circunvalación 2244, Formosa Capital',
-      phone: '+54 370 470-1300',
+      name: 'Local Gutnisky',
+      address: 'Av. Dr. Luis Gutnisky 1985, Formosa Capital',
+      phone: '+54 370 521-6381',
       hours: 'Lun-Vie 9-13hs / 17-21hs • Sáb 9-12hs',
     },
     {

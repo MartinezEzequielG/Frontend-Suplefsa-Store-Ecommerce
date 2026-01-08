@@ -3,7 +3,7 @@ import { backendFetch } from "@/lib/backend";
 import { ProductCard } from "@/components/ProductCard";
 import { getSiteConfig } from "@/lib/site";
 import { imageUrl } from "@/lib/backend";
-import Hero3D from "@/components/Hero3D";
+import HeroEcommerce from "@/components/HeroEcommerce"; // ✅
 
 type Product = {
   id: number;
@@ -26,7 +26,7 @@ export default async function Home() {
 
   return (
     <div>
-      <Hero3D />
+      <HeroEcommerce brandName={site?.name || "Suplementacion Formosa"} whatsappNumber={site?.whatsappNumber} />
 
       {/* Banners */}
       {banners.length > 0 && (

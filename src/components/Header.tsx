@@ -76,7 +76,9 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
   }, []);
 
   const trimmed = q.trim();
-  const searchHref = `/products?search=${encodeURIComponent(trimmed)}`;
+
+  // ✅ FIX: /products usa "q", no "search"
+  const searchHref = `/products?q=${encodeURIComponent(trimmed)}&page=1&sort=createdAt:desc`;
 
   return (
     <header
@@ -90,23 +92,24 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
             ? 'bg-[#0a2540]/98 shadow-xl border-[#1565c0]/30'
             : 'bg-gradient-to-br from-[#1565c0]/95 via-[#2196f3]/90 to-[#42a5f5]/85 border-white/10'
         }
+        pt-[env(safe-area-inset-top)]
       `}
     >
-      <div className="mx-auto max-w-6xl px-2 sm:px-6">
+      <div className="mx-auto max-w-6xl px-3 sm:px-6">
         <div
           className={`
             flex items-center justify-between relative
-            ${scrolled ? 'h-16 sm:h-16 lg:h-16' : 'h-20 sm:h-24 lg:h-28'}
+            ${scrolled ? 'h-16 sm:h-16 lg:h-16' : 'h-16 sm:h-24 lg:h-28'}
           `}
         >
-          {/* Hamburguesa a la izquierda */}
+          {/* Hamburguesa a la izquierda (más “button-like” en mobile) */}
           <button
             type="button"
-            className="p-2 md:hidden flex items-center justify-center rounded-full hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
+            className="md:hidden inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
             onClick={() => setMobileMenu(true)}
             aria-label="Menú"
             aria-expanded={mobileMenu}
-            style={{ minWidth: 44 }}
+            style={{ width: 44, height: 44 }}
           >
             <Icon name="menu" className="h-6 w-6 text-white" />
           </button>
@@ -126,7 +129,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
                   alt={brandName}
                   className={`
                     w-auto drop-shadow-2xl
-                    ${scrolled ? 'h-10 sm:h-10 lg:h-10' : 'h-14 sm:h-18 lg:h-20'}
+                    ${scrolled ? 'h-10 sm:h-10 lg:h-10' : 'h-12 sm:h-18 lg:h-20'}
                   `}
                 />
               </span>
@@ -134,7 +137,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
               <span
                 className={`
                   text-white drop-shadow-2xl leading-none font-extrabold tracking-[0.18em] group-hover:scale-105 transition-transform
-                  ${scrolled ? 'text-3xl sm:text-4xl lg:text-4xl' : 'text-5xl sm:text-6xl lg:text-7xl'}
+                  ${scrolled ? 'text-3xl sm:text-4xl lg:text-4xl' : 'text-4xl sm:text-6xl lg:text-7xl'}
                 `}
               >
                 SF
@@ -146,23 +149,24 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
             </span>
           </Link>
 
-          {/* Acciones a la derecha */}
-          <div className="flex items-center gap-1 absolute right-0 top-1/2 -translate-y-1/2 z-10">
+          {/* Acciones a la derecha (botones iguales visualmente) */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              className="p-2 flex items-center justify-center rounded-full hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
+              className="inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
               onClick={() => setSearchOpen(true)}
               aria-label="Buscar"
-              style={{ minWidth: 44 }}
+              style={{ width: 44, height: 44 }}
             >
               <Icon name="search" className="h-6 w-6 text-white" />
             </button>
+
             {cartEnabled && (
               <Link
                 href="/cart"
-                className="p-2 flex items-center justify-center rounded-full hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
+                className="inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
                 aria-label="Carrito"
-                style={{ minWidth: 44 }}
+                style={{ width: 44, height: 44 }}
               >
                 <MiniCart />
               </Link>
@@ -211,7 +215,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
         </Link>
       </nav>
 
-      {/* Mobile menu bottom sheet */}
+      {/* Mobile menu bottom sheet (más prolijo y cómodo) */}
       {mobileMenu && (
         <div className="fixed inset-0 z-50 flex flex-col">
           {/* overlay */}
@@ -221,10 +225,19 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
             aria-label="Cerrar menú"
             onClick={() => setMobileMenu(false)}
           />
+
           {/* sheet */}
-          <div className="w-full bg-white rounded-t-3xl shadow-2xl border-t border-[var(--border)]">
-            <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-[var(--border)]">
-              <span className="text-lg font-semibold text-[var(--text)]">Menú</span>
+          <div className="w-full bg-white rounded-t-3xl shadow-2xl border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
+            <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-[var(--border)]">
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold text-[var(--text-muted)] tracking-widest uppercase">
+                  Menú
+                </div>
+                <div className="text-base font-extrabold text-[var(--text)] truncate">
+                  {brandName}
+                </div>
+              </div>
+
               <button
                 type="button"
                 className="p-2 rounded-full hover:bg-zinc-100 focus:bg-zinc-100 transition"
@@ -235,48 +248,63 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
               </button>
             </div>
 
-            <nav className="px-6 py-5 grid gap-4 text-base font-medium text-[var(--text)]">
+            <nav className="px-5 py-4 grid gap-2 text-[15px] font-semibold text-[var(--text)]">
               <Link
                 href="/products"
                 onClick={() => setMobileMenu(false)}
-                className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-b-0"
+                className="h-12 px-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between"
               >
                 <span>Catálogo</span>
+                <span className="text-[var(--text-muted)]">→</span>
               </Link>
+
               <Link
                 href="/about"
                 onClick={() => setMobileMenu(false)}
-                className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-b-0"
+                className="h-12 px-4 rounded-xl border border-[var(--border)] bg-white flex items-center justify-between"
               >
                 <span>Nosotros</span>
+                <span className="text-[var(--text-muted)]">→</span>
               </Link>
+
               <Link
                 href="/contact"
                 onClick={() => setMobileMenu(false)}
-                className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-b-0"
+                className="h-12 px-4 rounded-xl border border-[var(--border)] bg-white flex items-center justify-between"
               >
                 <span>Contacto</span>
+                <span className="text-[var(--text-muted)]">→</span>
               </Link>
-              <Link
-                href="/cart"
-                onClick={() => setMobileMenu(false)}
-                className="flex items-center justify-between py-1.5 border-b border-zinc-100 last:border-b-0"
-              >
-                <span>Carrito</span>
-              </Link>
-              <Link
-                href="/account"
-                onClick={() => setMobileMenu(false)}
-                className="flex items-center justify-between py-1.5"
-              >
-                <span>Iniciar sesión</span>
-              </Link>
+
+              {cartEnabled && (
+                <Link
+                  href="/cart"
+                  onClick={() => setMobileMenu(false)}
+                  className="h-12 px-4 rounded-xl border border-[var(--border)] bg-white flex items-center justify-between"
+                >
+                  <span>Carrito</span>
+                  <span className="text-[var(--text-muted)]">→</span>
+                </Link>
+              )}
             </nav>
+
+            <div className="px-5 pb-5">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenu(false);
+                  setSearchOpen(true);
+                }}
+                className="w-full h-12 rounded-xl bg-[var(--primary)] text-white font-extrabold text-sm hover:bg-[var(--primary-2)] transition"
+              >
+                Buscar productos
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Search overlay */}
+      {/* Search overlay: no cambio acá salvo que ya usa searchHref corregido */}
       {searchOpen && (
         <div className="fixed inset-0 z-50 flex flex-col">
           <button
