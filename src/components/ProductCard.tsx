@@ -65,37 +65,20 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
         </div>
 
         {/* Info */}
-        <div className="px-3 pt-3 pb-2">
-          {/* ✅ Título con color oscuro */}
-          <h3 className="
-            font-bold
-            text-[15px]
-            leading-snug
-            text-[var(--text)]
-            line-clamp-2
-            min-h-[2.4rem]
-            mb-2
-          ">
+        <div className="px-2.5 pt-2 pb-1.5">
+          <h3 className="font-semibold text-[13px] leading-snug text-[var(--text)] line-clamp-2 mb-1.5">
             {p.name}
           </h3>
 
-          {/* Descripción: ocultar en mobile */}
-          {p.description ? (
-            <p className="hidden sm:block text-xs text-[var(--text-muted)] line-clamp-2 mb-2">
-              {p.description}
-            </p>
-          ) : null}
-
-          {/* ✅ Separador visual sutil */}
-          <div className="h-px bg-gray-100 mb-2" />
-
-          {/* ✅ Precio con más jerarquía */}
-          <div>
+          {/* Precio: más compacto */}
+          <div className="mt-0.5">
             {hasTransfer ? (
               <>
-                <div className="text-[11px] text-gray-400 line-through">{formatPrice(base)}</div>
-                <div className="text-xl font-black text-green-600 leading-tight">{formatPrice(transferPrice)}</div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-green-700">
+                <div className="text-[10px] text-gray-400 line-through">{formatPrice(base)}</div>
+                <div className="text-[17px] font-extrabold text-green-600 leading-none">
+                  {formatPrice(transferPrice)}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold text-green-700">
                   <svg
                     width="12"
                     height="12"
@@ -115,9 +98,11 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
               </>
             ) : hasMp ? (
               <>
-                <div className="text-[11px] text-gray-400 line-through">{formatPrice(base)}</div>
-                <div className="text-xl font-black text-blue-600 leading-tight">{formatPrice(mpPrice)}</div>
-                <div className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-blue-700">
+                <div className="text-[10px] text-gray-400 line-through">{formatPrice(base)}</div>
+                <div className="text-[17px] font-extrabold text-blue-600 leading-none">
+                  {formatPrice(mpPrice)}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[10px] font-semibold text-blue-700">
                   <svg
                     width="12"
                     height="12"
@@ -136,18 +121,20 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
                 </div>
               </>
             ) : (
-              <div className="text-xl font-black text-[var(--text)] leading-tight">{formatPrice(base)}</div>
+              <div className="text-[17px] font-extrabold text-[color:var(--accent)] leading-none">
+                {formatPrice(base)}
+              </div>
             )}
           </div>
         </div>
       </Link>
 
       {/* CTA */}
-      <div className="px-2.5 pb-2.5">
+      <div className="px-2.5 pb-2">
         {cartEnabled ? (
           <button
             type="button"
-            className="w-full rounded-lg bg-blue-600 text-white font-semibold py-2 text-sm hover:bg-blue-700 transition"
+            className="w-full rounded-lg bg-blue-600 text-white font-semibold py-1.5 text-xs hover:bg-blue-700 transition"
           >
             Agregar al carrito
           </button>
@@ -161,22 +148,14 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
               relative overflow-hidden
               w-full inline-flex items-center justify-center gap-2
               rounded-lg
-              px-3 py-2
-              text-[13px] font-semibold
+              px-3 py-1.5
+              text-xs font-semibold
               text-white
               border border-black/5
               bg-[#25d366]
               shadow-[0_6px_14px_rgba(16,185,129,0.18)]
               active:translate-y-[1px] active:shadow-[0_3px_10px_rgba(16,185,129,0.16)]
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#25d366]
-
-              before:content-[''] before:absolute before:inset-0
-              before:bg-gradient-to-b before:from-white/18 before:to-transparent
-              before:pointer-events-none
-
-              sm:bg-gradient-to-br sm:from-[#25d366] sm:to-[#128c7e]
-              sm:hover:from-[#20ba5a] sm:hover:to-[#0f7a6a]
-              sm:transition
             "
           >
             <svg
@@ -194,7 +173,7 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
         ) : (
           <Link
             href={`/products/${p.slug}`}
-            className="w-full inline-flex items-center justify-center rounded-lg border border-[var(--border)] py-2 text-sm font-semibold text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition"
+            className="w-full inline-flex items-center justify-center rounded-lg border border-[var(--border)] py-1.5 text-xs font-semibold text-[var(--text)] hover:border-[var(--primary)] hover:text-[var(--primary)] transition"
           >
             Ver producto
           </Link>
