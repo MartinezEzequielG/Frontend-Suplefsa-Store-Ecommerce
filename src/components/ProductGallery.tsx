@@ -1,27 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { imageUrl } from '@/lib/backend';
 
 type Img = { url?: string };
+
 export default function ProductGallery({ images }: { images: Img[] }) {
-  const imgs = (images || []).filter(Boolean);
+  const imgs = useMemo(() => (images || []).filter(Boolean), [images]);
   const [idx, setIdx] = useState(0);
+
+  // ✅ ratio dinámico para que el contenedor se adapte a la imagen (sin recorte y sin “aires” raros)
+  const [ratio, setRatio] = useState<string>('1 / 1');
+
   const current = imageUrl(imgs[idx]?.url || '/placeholder.svg');
 
   return (
     <div className="space-y-3">
-      <div className="relative overflow-hidden rounded-lg border border-(--border) bg-(--surface) aspect-square">
+      {/* Imagen principal: completa + contenedor con aspect ratio real */}
+      <div
+        className="relative overflow-hidden rounded-lg border border-(--border) bg-white shadow-sm max-h-[70vh] md:max-h-[520px]"
+        style={{ aspectRatio: ratio }}
+      >
         <Image
           src={current}
           alt=""
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover transition-transform duration-300 hover:scale-[1.02]"
+          className="object-contain"
           priority
+          onLoadingComplete={(img) => {
+            const w = img?.naturalWidth || 1;
+            const h = img?.naturalHeight || 1;
+            setRatio(`${w} / ${h}`);
+          }}
         />
       </div>
+
       {imgs.length > 1 && (
         <div className="grid grid-cols-5 gap-2">
           {imgs.map((im, i) => (
