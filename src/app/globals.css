@@ -42,17 +42,40 @@ a {
   transition: color 0.2s ease;
   text-decoration: none;
 }
-a:hover {
+
+/* ❌ Quitar hover global que pisa cards/botones */
+/*
+a:not(.wa-cta):not(.btn):not([data-cta="true"]):hover {
+  color: var(--primary);
+}
+*/
+
+/* ✅ Hover SOLO para links “de texto” (opt-in) */
+a[data-link="true"]:hover {
   color: var(--primary);
 }
 
-/* Evita que el hover global de <a> rompa CTAs "botón" */
-.wa-cta,
-.wa-cta:hover,
-.wa-cta:active,
-.wa-cta:focus {
-  color: #fff;
+/* (Opcional) si querés también subrayado solo en esos */
+a[data-link="true"]:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
+
+/* CTA WhatsApp: nunca heredar colores/hover global */
+a.wa-cta,
+a.wa-cta:visited,
+a.wa-cta:hover,
+a.wa-cta:active,
+a.wa-cta:focus,
+a.wa-cta:focus-visible {
+  color: #fff !important;
+  text-decoration: none !important;
+}
+
+a.wa-cta:focus-visible {
+  outline: none !important;
+}
+
 
 /* Focus */
 :focus-visible {
