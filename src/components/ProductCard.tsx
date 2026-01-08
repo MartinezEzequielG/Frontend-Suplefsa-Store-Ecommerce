@@ -20,20 +20,29 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
 
   return (
     <div className="bg-white border border-[var(--border)] rounded-xl overflow-hidden transition hover:border-[var(--accent)] hover:shadow-sm">
-      {/* ✅ Parte clickeable (sin anidar botones/links adentro) */}
-      <Link href={`/products/${p.slug}`} className="block">
+      <Link href={`/products/${p.slug}`} className="block group">
         {/* Imagen */}
-        <div className="relative aspect-square bg-zinc-50">
-          <Image
-            src={imageUrl(p.images?.[0]?.url)}
-            alt={p.name}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover"
-            priority={idx < 4}
-          />
+        <div
+          className="
+            relative
+            aspect-[4/5] sm:aspect-square
+            bg-gradient-to-br from-zinc-50 to-white
+          "
+        >
+          <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-zinc-50">
+            <Image
+              src={imageUrl(p.images?.[0]?.url)}
+              alt={p.name}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover object-center"
+              priority={idx < 4}
+              quality={85}
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent" />
+          </div>
 
-          {/* Badges minimalistas (sin emojis) */}
+          {/* Badges */}
           {(p.isNew || p.isHot || p.freeShipping) && (
             <div className="absolute top-2 left-2 flex flex-wrap gap-1.5">
               {p.isNew && (
@@ -56,29 +65,40 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
         </div>
 
         {/* Info */}
-        <div className="p-3">
-          <h3 className="font-semibold text-[15px] leading-snug text-[var(--text)] line-clamp-2 min-h-[2.5rem]">
+        <div className="px-3 pt-3 pb-2">
+          {/* ✅ Título con color oscuro */}
+          <h3 className="
+            font-bold
+            text-[15px]
+            leading-snug
+            text-[var(--text)]
+            line-clamp-2
+            min-h-[2.4rem]
+            mb-2
+          ">
             {p.name}
           </h3>
 
-          {/* Descripción: ocultar en mobile para que el grid quede prolijo */}
+          {/* Descripción: ocultar en mobile */}
           {p.description ? (
-            <p className="hidden sm:block mt-1 text-xs text-[var(--text-muted)] line-clamp-2">
+            <p className="hidden sm:block text-xs text-[var(--text-muted)] line-clamp-2 mb-2">
               {p.description}
             </p>
           ) : null}
 
-          {/* Precio */}
-          <div className="mt-2">
+          {/* ✅ Separador visual sutil */}
+          <div className="h-px bg-gray-100 mb-2" />
+
+          {/* ✅ Precio con más jerarquía */}
+          <div>
             {hasTransfer ? (
               <>
-                <div className="text-xs text-gray-400 line-through">{formatPrice(base)}</div>
-                <div className="text-lg font-extrabold text-green-600">{formatPrice(transferPrice)}</div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-green-700">
-                  {/* Ícono billete minimalista */}
+                <div className="text-[11px] text-gray-400 line-through">{formatPrice(base)}</div>
+                <div className="text-xl font-black text-green-600 leading-tight">{formatPrice(transferPrice)}</div>
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-green-700">
                   <svg
-                    width="14"
-                    height="14"
+                    width="12"
+                    height="12"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -95,13 +115,12 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
               </>
             ) : hasMp ? (
               <>
-                <div className="text-xs text-gray-400 line-through">{formatPrice(base)}</div>
-                <div className="text-lg font-extrabold text-blue-600">{formatPrice(mpPrice)}</div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-blue-700">
-                  {/* Ícono tarjeta minimalista (reemplaza 💳) */}
+                <div className="text-[11px] text-gray-400 line-through">{formatPrice(base)}</div>
+                <div className="text-xl font-black text-blue-600 leading-tight">{formatPrice(mpPrice)}</div>
+                <div className="mt-1 flex items-center gap-1.5 text-[11px] font-semibold text-blue-700">
                   <svg
-                    width="14"
-                    height="14"
+                    width="12"
+                    height="12"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -117,14 +136,14 @@ export function ProductCard({ p, idx, checkoutMode, whatsappNumber }: any) {
                 </div>
               </>
             ) : (
-              <div className="text-lg font-extrabold text-[var(--text)]">{formatPrice(base)}</div>
+              <div className="text-xl font-black text-[var(--text)] leading-tight">{formatPrice(base)}</div>
             )}
           </div>
         </div>
       </Link>
 
-      {/* ✅ CTA separado (evita bugs de tap en mobile) */}
-      <div className="px-3 pb-3">
+      {/* CTA */}
+      <div className="px-2.5 pb-2.5">
         {cartEnabled ? (
           <button
             type="button"
