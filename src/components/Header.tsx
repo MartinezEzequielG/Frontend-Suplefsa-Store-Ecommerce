@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import MiniCart from '@/components/MiniCart';
 import { cartEnabledFrom } from '@/lib/checkoutMode';
 
@@ -39,33 +39,66 @@ type HeaderProps = {
   checkoutMode?: 'CATALOG' | 'CART';
 };
 
+function HeaderIconButton({
+  onClick,
+  ariaLabel,
+  children,
+}: {
+  onClick?: () => void;
+  ariaLabel: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={ariaLabel}
+      className="
+        inline-flex items-center justify-center
+        rounded-full
+        bg-white/10 hover:bg-white/16
+        border border-white/10
+        shadow-[0_6px_20px_rgba(0,0,0,0.18)]
+        transition
+        active:scale-95
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-0
+      "
+      style={{ width: 46, height: 46 }}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkoutMode }: HeaderProps) {
   const cartEnabled = cartEnabledFrom(checkoutMode);
+
   const [mobileMenu, setMobileMenu] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState('');
   const [scrolled, setScrolled] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Shadow al hacer scroll
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const overlayOpen = mobileMenu || searchOpen;
+
+  // ✅ Umbral más alto + menos toggles
   useEffect(() => {
     function onScroll() {
-      setScrolled(window.scrollY > 16);
+      setScrolled(window.scrollY > 24);
     }
     window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Foco automático en buscador
   useEffect(() => {
-    if (searchOpen) setTimeout(() => inputRef.current?.focus(), 100);
-    document.body.style.overflow = searchOpen || mobileMenu ? 'hidden' : '';
+    document.body.style.overflow = overlayOpen ? 'hidden' : '';
+    if (searchOpen) setTimeout(() => inputRef.current?.focus(), 80);
     return () => {
       document.body.style.overflow = '';
     };
-  }, [searchOpen, mobileMenu]);
+  }, [overlayOpen, searchOpen]);
 
-  // Cerrar overlays al navegar
   useEffect(() => {
     const handler = () => {
       setMobileMenu(false);
@@ -75,167 +108,150 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
     return () => window.removeEventListener('popstate', handler);
   }, []);
 
-  const trimmed = q.trim();
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setMobileMenu(false);
+        setSearchOpen(false);
+      }
+    }
+    if (overlayOpen) window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [overlayOpen]);
 
-  // ✅ FIX: /products usa "q", no "search"
-  const searchHref = `/products?q=${encodeURIComponent(trimmed)}&page=1&sort=createdAt:desc`;
+  const trimmed = q.trim();
+  const searchHref = useMemo(
+    () => `/products?q=${encodeURIComponent(trimmed)}&page=1&sort=createdAt:desc`,
+    [trimmed]
+  );
 
   return (
     <header
-      className={`
-        sf-header
-        sticky top-0 z-50 border-b
-        backdrop-blur-md
-        transition-all duration-300
-        ${
-          scrolled
-            ? 'bg-[#0a2540]/98 shadow-xl border-[#1565c0]/30'
-            : 'bg-gradient-to-br from-[#1565c0]/95 via-[#2196f3]/90 to-[#42a5f5]/85 border-white/10'
-        }
-        pt-[env(safe-area-inset-top)]
-      `}
+      className={[
+        'sf-header sticky top-0 z-50 border-b backdrop-blur-md',
+        'transition-[box-shadow,border-color] duration-300',
+        'pt-[env(safe-area-inset-top)]',
+        'bg-gradient-to-br from-[#0b2a4a]/94 via-[#1565c0]/88 to-[#2196f3]/78',
+        scrolled
+          ? 'border-white/15 shadow-[0_16px_44px_rgba(0,0,0,0.34)]'
+          : 'border-white/10 shadow-[0_8px_24px_rgba(0,0,0,0.18)]',
+      ].join(' ')}
+      style={{
+        willChange: 'transform',
+        transform: 'translateZ(0)',
+      }}
     >
-      <div className="mx-auto max-w-6xl px-3 sm:px-6">
-        <div
-          className={`
-            flex items-center justify-between relative
-            ${scrolled ? 'h-16 sm:h-16 lg:h-16' : 'h-16 sm:h-24 lg:h-28'}
-          `}
-        >
-          {/* Hamburguesa a la izquierda (más “button-like” en mobile) */}
-          <button
-            type="button"
-            className="md:hidden inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
-            onClick={() => setMobileMenu(true)}
-            aria-label="Menú"
-            aria-expanded={mobileMenu}
-            style={{ width: 44, height: 44 }}
-          >
-            <Icon name="menu" className="h-6 w-6 text-white" />
-          </button>
+      <div className="mx-auto max-w-6xl px-6 sm:px-10 py-2 sm:py-4">
+        <div className={['relative flex items-center justify-between', scrolled ? 'h-20' : 'h-20 sm:h-28'].join(' ')}>
+          {/* Left */}
+          <div className="flex items-center">
+            <div className="md:hidden">
+              <HeaderIconButton onClick={() => setMobileMenu(true)} ariaLabel="Menú">
+                <Icon name="menu" className="h-6 w-6 text-white" />
+              </HeaderIconButton>
+            </div>
 
-          {/* Logo centrado */}
+            {/* Desktop placeholder para balance visual */}
+            <div className="hidden md:block" style={{ width: 46, height: 46 }} aria-hidden />
+          </div>
+
+          {/* Center logo (con aire lateral) */}
           <Link
             href="/"
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center select-none group"
+            className={[
+              'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2',
+              'flex flex-col items-center select-none',
+              'px-10 sm:px-14',
+            ].join(' ')}
             aria-label="Ir al inicio"
-            style={{ minWidth: 0 }}
           >
             {logoUrl ? (
-              <span className="block group-hover:scale-105 transition-transform">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={logoUrl}
-                  alt={brandName}
-                  className={`
-                    w-auto drop-shadow-2xl
-                    ${scrolled ? 'h-10 sm:h-10 lg:h-10' : 'h-12 sm:h-18 lg:h-20'}
-                  `}
-                />
-              </span>
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt={brandName}
+                className={[
+                  'w-auto drop-shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition-transform duration-200 hover:scale-[1.03]',
+                  scrolled ? 'h-16 sm:h-16' : 'h-16 sm:h-24',
+                ].join(' ')}
+              />
             ) : (
               <span
-                className={`
-                  text-white drop-shadow-2xl leading-none font-extrabold tracking-[0.18em] group-hover:scale-105 transition-transform
-                  ${scrolled ? 'text-3xl sm:text-4xl lg:text-4xl' : 'text-4xl sm:text-6xl lg:text-7xl'}
-                `}
+                className={[
+                  'text-white drop-shadow-[0_10px_30px_rgba(0,0,0,0.45)] leading-none font-extrabold tracking-[0.18em]',
+                  scrolled ? 'text-4xl' : 'text-5xl sm:text-6xl',
+                ].join(' ')}
               >
                 SF
               </span>
             )}
 
-            <span className="hidden md:block mt-1 text-xs font-semibold tracking-[0.22em] uppercase text-white/90">
+            <span className="hidden md:block mt-2 text-[13px] font-semibold tracking-[0.22em] uppercase text-white/90">
               {brandName}
             </span>
           </Link>
 
-          {/* Acciones a la derecha (botones iguales visualmente) */}
+          {/* Right */}
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
-              onClick={() => setSearchOpen(true)}
-              aria-label="Buscar"
-              style={{ width: 44, height: 44 }}
-            >
+            <HeaderIconButton onClick={() => setSearchOpen(true)} ariaLabel="Buscar">
               <Icon name="search" className="h-6 w-6 text-white" />
-            </button>
+            </HeaderIconButton>
 
             {cartEnabled && (
               <Link
                 href="/cart"
-                className="inline-flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 focus:bg-white/25 active:scale-95 transition-all"
                 aria-label="Carrito"
-                style={{ width: 44, height: 44 }}
+                className="
+                  inline-flex items-center justify-center
+                  rounded-full
+                  bg-white/10 hover:bg-white/16
+                  border border-white/10
+                  shadow-[0_6px_20px_rgba(0,0,0,0.18)]
+                  transition
+                  active:scale-95
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-0
+                "
+                style={{ width: 46, height: 46 }}
               >
                 <MiniCart />
               </Link>
             )}
           </div>
         </div>
+
+        {/* Desktop nav (único lugar donde aparece) */}
+        <nav className="hidden md:flex items-center justify-center gap-2 pb-3">
+          {[
+            { href: '/products', label: 'Catálogo' },
+            { href: '/about', label: 'Nosotros' },
+            { href: '/contact', label: 'Contacto' },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="
+                px-4 py-2 rounded-xl
+                text-[15px] font-semibold text-white/95
+                hover:text-white hover:bg-white/10
+                border border-transparent hover:border-white/10
+                transition
+              "
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
       </div>
 
-      {/* Desktop nav - con hover mejorado */}
-      <nav className="hidden md:flex items-center justify-center gap-8 py-3 text-[17px] font-semibold text-white/95">
-        <Link
-          href="/products"
-          className="
-            relative px-4 py-2 rounded-lg
-            transition-all duration-200
-            hover:text-white hover:bg-white/15
-            focus:bg-white/20 focus:outline-none
-            active:scale-95
-          "
-        >
-          Catálogo
-        </Link>
-        <Link
-          href="/about"
-          className="
-            relative px-4 py-2 rounded-lg
-            transition-all duration-200
-            hover:text-white hover:bg-white/15
-            focus:bg-white/20 focus:outline-none
-            active:scale-95
-          "
-        >
-          Nosotros
-        </Link>
-        <Link
-          href="/contact"
-          className="
-            relative px-4 py-2 rounded-lg
-            transition-all duration-200
-            hover:text-white hover:bg-white/15
-            focus:bg-white/20 focus:outline-none
-            active:scale-95
-          "
-        >
-          Contacto
-        </Link>
-      </nav>
-
-      {/* Mobile menu bottom sheet (más prolijo y cómodo) */}
+      {/* Mobile menu */}
       {mobileMenu && (
         <div className="fixed inset-0 z-50 flex flex-col">
-          {/* overlay */}
-          <button
-            type="button"
-            className="flex-1 bg-black/55"
-            aria-label="Cerrar menú"
-            onClick={() => setMobileMenu(false)}
-          />
-
-          {/* sheet */}
+          <button type="button" className="flex-1 bg-black/55" aria-label="Cerrar menú" onClick={() => setMobileMenu(false)} />
           <div className="w-full bg-white rounded-t-3xl shadow-2xl border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
             <div className="px-5 pt-5 pb-4 flex items-center justify-between border-b border-[var(--border)]">
               <div className="min-w-0">
-                <div className="text-[11px] font-bold text-[var(--text-muted)] tracking-widest uppercase">
-                  Menú
-                </div>
-                <div className="text-base font-extrabold text-[var(--text)] truncate">
-                  {brandName}
-                </div>
+                <div className="text-[11px] font-bold text-[var(--text-muted)] tracking-widest uppercase">Menú</div>
+                <div className="text-base font-extrabold text-[var(--text)] truncate">{brandName}</div>
               </div>
 
               <button
@@ -252,7 +268,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
               <Link
                 href="/products"
                 onClick={() => setMobileMenu(false)}
-                className="h-12 px-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between"
+                className="h-12 px-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] flex items-center justify-between"
               >
                 <span>Catálogo</span>
                 <span className="text-[var(--text-muted)]">→</span>
@@ -261,7 +277,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
               <Link
                 href="/about"
                 onClick={() => setMobileMenu(false)}
-                className="h-12 px-4 rounded-xl border border-[var(--border)] bg-white flex items-center justify-between"
+                className="h-12 px-4 rounded-2xl border border-[var(--border)] bg-white flex items-center justify-between"
               >
                 <span>Nosotros</span>
                 <span className="text-[var(--text-muted)]">→</span>
@@ -270,7 +286,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
               <Link
                 href="/contact"
                 onClick={() => setMobileMenu(false)}
-                className="h-12 px-4 rounded-xl border border-[var(--border)] bg-white flex items-center justify-between"
+                className="h-12 px-4 rounded-2xl border border-[var(--border)] bg-white flex items-center justify-between"
               >
                 <span>Contacto</span>
                 <span className="text-[var(--text-muted)]">→</span>
@@ -280,7 +296,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
                 <Link
                   href="/cart"
                   onClick={() => setMobileMenu(false)}
-                  className="h-12 px-4 rounded-xl border border-[var(--border)] bg-white flex items-center justify-between"
+                  className="h-12 px-4 rounded-2xl border border-[var(--border)] bg-white flex items-center justify-between"
                 >
                   <span>Carrito</span>
                   <span className="text-[var(--text-muted)]">→</span>
@@ -295,7 +311,7 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
                   setMobileMenu(false);
                   setSearchOpen(true);
                 }}
-                className="w-full h-12 rounded-xl bg-[var(--primary)] text-white font-extrabold text-sm hover:bg-[var(--primary-2)] transition"
+                className="w-full h-12 rounded-2xl bg-[var(--primary)] text-white font-extrabold text-sm hover:bg-[var(--primary-2)] transition"
               >
                 Buscar productos
               </button>
@@ -304,18 +320,14 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
         </div>
       )}
 
-      {/* Search overlay: no cambio acá salvo que ya usa searchHref corregido */}
+      {/* Search overlay */}
       {searchOpen && (
         <div className="fixed inset-0 z-50 flex flex-col">
-          <button
-            type="button"
-            className="flex-1 bg-black/55"
-            aria-label="Cerrar búsqueda"
-            onClick={() => setSearchOpen(false)}
-          />
-          <div className="w-full bg-white rounded-t-3xl shadow-2xl border-t border-[var(--border)]">
+          <button type="button" className="flex-1 bg-black/55" aria-label="Cerrar búsqueda" onClick={() => setSearchOpen(false)} />
+
+          <div className="w-full bg-white rounded-t-3xl shadow-2xl border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
             <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-[var(--border)]">
-              <span className="text-lg font-semibold text-[var(--text)]">Buscar productos</span>
+              <span className="text-base sm:text-lg font-extrabold text-[var(--text)]">Buscar productos</span>
               <button
                 type="button"
                 className="p-2 rounded-full hover:bg-zinc-100 focus:bg-zinc-100 transition"
@@ -327,30 +339,37 @@ export function Header({ logoUrl, brandName = 'Suplementacion Formosa', checkout
             </div>
 
             <form
-              action={searchHref}
-              onSubmit={e => {
+              onSubmit={(e) => {
                 e.preventDefault();
                 if (trimmed) window.location.href = searchHref;
               }}
-              className="px-6 py-5 flex gap-2"
+              className="px-6 py-5 flex flex-col sm:flex-row gap-3"
             >
-              <input
-                ref={inputRef}
-                value={q}
-                onChange={e => setQ(e.target.value)}
-                type="text"
-                placeholder="Buscar proteínas, creatina, etc."
-                className="input-bordered input w-full rounded-md pr-10 text-base py-2.5"
-                aria-label="Buscar productos"
-              />
-              <button
-                type="submit"
-                className="btn-primary btn rounded-md px-4 text-sm font-semibold"
-                disabled={!trimmed}
-              >
+              <div className="relative flex-1">
+                <input
+                  ref={inputRef}
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  type="text"
+                  placeholder="Buscar proteínas, creatina, etc."
+                  className="input"
+                  aria-label="Buscar productos"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]">
+                  <Icon name="search" className="h-5 w-5" />
+                </span>
+              </div>
+
+              <button type="submit" className="btn btn-primary rounded-2xl" disabled={!trimmed}>
                 Buscar
               </button>
             </form>
+
+            <div className="px-6 pb-6">
+              <div className="text-xs font-semibold text-[var(--text-muted)]">
+                Sugerencias: creatina, whey, pre entreno, aminoácidos.
+              </div>
+            </div>
           </div>
         </div>
       )}

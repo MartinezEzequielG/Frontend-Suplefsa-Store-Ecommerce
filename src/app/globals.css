@@ -259,11 +259,11 @@ h1, h2, h3, h4 {
   left: 0;
   right: 0;
   bottom: -1px;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--primary), var(--accent));
+  height: 3px; /* más grueso */
+  background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent), var(--accent-2), var(--accent));
   background-size: 200% 100%;
   animation: header-glow 8s linear infinite;
-  opacity: 0.5;
+  opacity: 0.85; /* más visible */
   pointer-events: none;
 }
 
@@ -283,3 +283,8 @@ h1, h2, h3, h4 {
   background-size: 44px 44px;
   mask-image: radial-gradient(circle at 40% 30%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 60%);
 }
+
+/* Banners y cards */
+.shadow { box-shadow: 0 4px 16px rgba(33,150,243,0.08); }
+.shadow-lg { box-shadow: 0 8px 32px rgba(33,150,243,0.13); }
+.transition { transition: all 0.18s cubic-bezier(.4,0,.2,1); }

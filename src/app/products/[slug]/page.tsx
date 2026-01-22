@@ -95,13 +95,49 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </div>
           )}
 
-          {/* Descripción */}
+          {/* Detalle del producto */}
           {p.description && (
-            <div className="pt-2 border-t border-gray-200">
+            <section className="pt-4 border-t border-gray-200 space-y-3">
+              <header>
+                <h2 className="text-sm font-extrabold text-gray-900">Detalle del producto</h2>
+              </header>
+
+              <div className="flex flex-wrap gap-2">
+                {p.category?.name ? (
+                  <span className="text-[11px] font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                    Categoría: {p.category.name}
+                  </span>
+                ) : null}
+
+                {p.freeShipping ? (
+                  <span className="text-[11px] font-semibold text-gray-700 bg-gray-100 px-2 py-1 rounded-full">
+                    Envío gratis
+                  </span>
+                ) : null}
+
+                {lowStock ? (
+                  <span className="text-[11px] font-semibold text-orange-800 bg-orange-100 px-2 py-1 rounded-full">
+                    Últimas unidades
+                  </span>
+                ) : null}
+
+                {p.isNew ? (
+                  <span className="text-[11px] font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded-full">
+                    Nuevo
+                  </span>
+                ) : null}
+
+                {p.isHot ? (
+                  <span className="text-[11px] font-semibold text-[color:var(--accent)] bg-orange-50 px-2 py-1 rounded-full">
+                    Más vendido
+                  </span>
+                ) : null}
+              </div>
+
               <p className="text-sm leading-6 text-gray-700 whitespace-pre-line">
                 {p.description}
               </p>
-            </div>
+            </section>
           )}
 
           {/* CTA */}
