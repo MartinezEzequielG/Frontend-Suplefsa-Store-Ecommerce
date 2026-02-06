@@ -3,7 +3,7 @@ import { getSiteConfig, type SiteConfig } from '@/lib/site';
 
 function IconWrap({ children }: { children: React.ReactNode }) {
   return (
-    <div className="inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-[var(--border)] bg-white shadow-[var(--shadow-soft)]">
+    <div className="about-ic inline-flex h-11 w-11 items-center justify-center rounded-[14px] border border-[var(--border)] bg-white shadow-[0_10px_30px_rgba(2,6,23,0.06)]">
       {children}
     </div>
   );
@@ -19,10 +19,10 @@ function ValueItem({
   icon: React.ReactNode;
 }) {
   return (
-    <div className="card p-6">
+    <div className="about-value card p-6">
       <div className="flex items-start gap-4">
         <IconWrap>{icon}</IconWrap>
-        <div>
+        <div className="min-w-0">
           <h3 className="text-[16px] font-extrabold text-[var(--text)]">{title}</h3>
           <p className="mt-1 text-[14px] leading-6 text-[var(--text-muted)]">{desc}</p>
         </div>
@@ -33,7 +33,7 @@ function ValueItem({
 
 function StatCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="card p-5">
+    <div className="about-stat card p-5">
       <div className="text-[12px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
         {label}
       </div>
@@ -54,7 +54,7 @@ function WhatsAppButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="btn wa-cta"
+      className="btn wa-cta about-wa"
       style={{
         background: '#25d366',
         boxShadow: '0 2px 8px rgba(37, 211, 102, 0.28)',
@@ -200,169 +200,300 @@ export default async function AboutPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-      <SectionFadeIn>
-        {/* HERO */}
-        <section className="card relative overflow-hidden p-7 sm:p-10 animate-slide-up">
-          <div className="hero-grid pointer-events-none absolute inset-0 opacity-60" />
+      {/* Estilos locales: look & feel igual al home */}
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          .about-shell{
+            position: relative;
+          }
+          .about-shell::before{
+            content:"";
+            position:absolute;
+            inset:-40px -12px -40px -12px;
+            background:
+              radial-gradient(circle at 18% 12%, rgba(var(--primary-rgb),0.10), transparent 50%),
+              radial-gradient(circle at 82% 35%, rgba(var(--primary-rgb),0.06), transparent 52%),
+              linear-gradient(180deg, rgba(255,255,255,0.0), rgba(33,150,243,0.035) 35%, rgba(255,255,255,0.0));
+            pointer-events:none;
+            z-index:0;
+          }
 
-          <div className="relative">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="chip">Envíos a todo el país</span>
-              <span className="chip">Asesoramiento real</span>
-              <span className="chip">Atención rápida</span>
+          .about-hero{
+            position: relative;
+            overflow: hidden;
+          }
+          .about-heroGrid{
+            background-image:
+              linear-gradient(to right, rgba(15,23,42,0.055) 1px, transparent 1px),
+              linear-gradient(to bottom, rgba(15,23,42,0.045) 1px, transparent 1px);
+            background-size: 54px 54px;
+            -webkit-mask-image: radial-gradient(circle at 28% 20%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 62%);
+            mask-image: radial-gradient(circle at 28% 20%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 62%);
+            opacity:.9;
+          }
+          .about-diag{
+            position:absolute;
+            right:-160px;
+            top:-120px;
+            width: 680px;
+            height: 260px;
+            transform: rotate(18deg);
+            background: rgba(var(--primary-rgb),0.06);
+            pointer-events:none;
+          }
+          .about-line{
+            height: 3px;
+            background: linear-gradient(90deg,
+              rgba(var(--primary-rgb),0.0),
+              rgba(var(--primary-rgb),0.70),
+              rgba(var(--primary-rgb),0.22),
+              rgba(var(--primary-rgb),0.70),
+              rgba(var(--primary-rgb),0.0)
+            );
+            opacity:.85;
+          }
+
+          /* Valores: tile con borde degradado sutil, igual vibe del home */
+          .about-value{
+            position: relative;
+            border: 1px solid transparent;
+            background:
+              linear-gradient(#fff, #fff) padding-box,
+              linear-gradient(135deg, rgba(var(--primary-rgb),0.55), rgba(var(--primary-rgb),0.12), rgba(var(--primary-rgb),0.42)) border-box;
+            box-shadow: 0 14px 40px rgba(2,6,23,0.06);
+            transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+            overflow:hidden;
+          }
+          .about-value::after{
+            content:"";
+            position:absolute;
+            inset:-2px;
+            background: radial-gradient(circle at 30% 20%, rgba(var(--primary-rgb),0.16), transparent 55%);
+            opacity:0;
+            transition: opacity .22s ease;
+            pointer-events:none;
+          }
+          .about-value:hover{
+            transform: translateY(-2px);
+            box-shadow: 0 22px 70px rgba(2,6,23,0.10), 0 18px 45px rgba(var(--primary-rgb),0.10);
+            filter: saturate(1.03);
+          }
+          .about-value:hover::after{ opacity: 1; }
+
+          .about-stat{
+            border: 1px solid rgba(var(--primary-rgb),0.12);
+            background: linear-gradient(180deg, rgba(33,150,243,0.05), #fff);
+          }
+
+          .about-wa{
+            border-radius: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+          }
+        `,
+        }}
+      />
+
+      <div className="about-shell relative z-[1]">
+        <SectionFadeIn>
+          {/* HERO */}
+          <section className="about-hero card relative p-7 sm:p-10 animate-slide-up">
+            <div className="pointer-events-none absolute inset-0 about-heroGrid" aria-hidden="true" />
+            <div className="about-diag" aria-hidden="true" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+
+            <div className="relative">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="chip">Envíos a todo el país</span>
+                <span className="chip">Asesoramiento real</span>
+                <span className="chip">Atención rápida</span>
+              </div>
+
+              <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight text-[var(--text)]">
+                {brandName}
+              </h1>
+
+              <p className="mt-4 max-w-2xl text-[15px] sm:text-[18px] leading-7 text-[var(--text-muted)]">
+                Más de <span className="font-extrabold text-[var(--text)]">3 años</span> acompañando y suplementando
+                a todo un país.
+              </p>
+
+              {/* ✅ CTA: solo Contacto + Catálogo */}
+              <div className="mt-6 flex flex-wrap gap-3">
+                <a href="/contact" className="btn btn-primary">
+                  Contacto
+                </a>
+                <a href="/products" className="btn btn-ghost">
+                  Catálogo
+                </a>
+              </div>
+            </div>
+          </section>
+        </SectionFadeIn>
+
+        <SectionFadeIn delay={0.08}>
+          {/* HISTORIA + MEDIA */}
+          <section className="mt-10 grid gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-7">
+              <div className="card p-7 sm:p-8">
+                <div className="flex items-end justify-between gap-4">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
+                    Nuestra historia
+                  </h2>
+                  <div className="hidden sm:block w-20">
+                    <div className="about-line rounded-full" />
+                  </div>
+                </div>
+
+                <div className="mt-4 space-y-4 text-[15px] leading-7 text-[var(--text-muted)]">
+                  <p>
+                    En <span className="font-extrabold text-[var(--text)]">{brandName}</span> nacimos con una misión simple:
+                    acercar suplementación confiable a cada atleta, desde principiantes hasta profesionales.
+                  </p>
+
+                  <p>
+                    Empezamos con pocos productos en un showroom, pero con un estándar claro: buena atención, productos reales
+                    y recomendaciones con criterio. Hoy contamos con{' '}
+                    <span className="font-extrabold text-[var(--text)]">2 locales en Formosa capital</span> y hacemos envíos
+                    constantes a todo el país.
+                  </p>
+                </div>
+
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                      Atención
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-[var(--text)]">
+                      Te asesoramos según tu objetivo
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-white/70 p-4">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                      Envíos
+                    </div>
+                    <div className="mt-1 text-sm font-semibold text-[var(--text)]">
+                      Rápidos y con seguimiento
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight text-[var(--text)]">
-              {brandName}
-            </h1>
+            <div className="lg:col-span-5 grid gap-4">
+              <div className="card overflow-hidden">
+                <div className="relative aspect-[4/3] bg-white/60">
+                  <div className="pointer-events-none absolute inset-0 about-heroGrid opacity-40" aria-hidden="true" />
+                  <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-[var(--text-muted)]">
+                    Foto real del local / equipo / envíos
+                  </div>
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+                </div>
+              </div>
 
-            <p className="mt-4 max-w-2xl text-[15px] sm:text-[18px] leading-7 text-[var(--text-muted)]">
-              Más de <span className="font-extrabold text-[var(--text)]">3 años</span> acompañando y suplementando
-              a todo un país.
+              <div className="grid grid-cols-2 gap-4">
+                <StatCard label="Trayectoria" value="+3 años" />
+                <StatCard label="Locales" value="2" />
+              </div>
+            </div>
+          </section>
+        </SectionFadeIn>
+
+        <SectionFadeIn delay={0.16}>
+          {/* VALORES */}
+          <section className="mt-10">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
+                  Nuestros valores
+                </h2>
+                <p className="mt-2 max-w-2xl text-[14px] sm:text-[15px] leading-6 text-[var(--text-muted)]">
+                  Lo que define cómo trabajamos y cómo elegimos productos.
+                </p>
+              </div>
+
+              <div className="hidden sm:block w-24">
+                <div className="about-line rounded-full" />
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {values.map((v, i) => (
+                <ValueItem key={i} title={v.title} desc={v.desc} icon={v.icon} />
+              ))}
+            </div>
+          </section>
+        </SectionFadeIn>
+
+        <SectionFadeIn delay={0.24}>
+          {/* BLOQUE CONFIANZA + CTA WHATSAPP */}
+          <section className="mt-10">
+            <div className="card relative overflow-hidden p-7 sm:p-10">
+              <div className="pointer-events-none absolute inset-0 about-heroGrid opacity-35" aria-hidden="true" />
+              <div className="pointer-events-none absolute -top-24 left-[-140px] h-[260px] w-[640px] rotate-[18deg] bg-[rgba(33,150,243,0.06)]" aria-hidden="true" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent" />
+
+              <div className="relative grid gap-6 lg:grid-cols-12 lg:items-center">
+                <div className="lg:col-span-8">
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
+                    ¿Por qué elegirnos?
+                  </h2>
+                  <p className="mt-3 text-[15px] leading-7 text-[var(--text-muted)]">
+                    Te atendemos con criterio y con productos reales. Si no sabés qué llevar, te guiamos para que compres con
+                    confianza.
+                  </p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <span className="badge">Atención personalizada</span>
+                    <span className="badge">Productos verificados</span>
+                    <span className="badge">Envíos rápidos</span>
+                  </div>
+                </div>
+
+                {/* lateral sutil para balance visual (sin texto extra) */}
+                <div className="lg:col-span-4">
+                  <div className="hidden lg:block">
+                    <div className="card p-5 about-stat">
+                      <div className="text-[12px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+                        Confianza
+                      </div>
+                      <div className="mt-1 text-[18px] font-extrabold text-[var(--text)]">
+                        Atención con criterio
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </SectionFadeIn>
+
+        <SectionFadeIn delay={0.32}>
+          {/* CTA FINAL */}
+          <section className="mt-10 text-center">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
+              ¿Tenés dudas o querés asesoramiento?
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-7 text-[var(--text-muted)]">
+              Escríbanos por WhatsApp o pasá por el local. Te ayudamos a elegir lo mejor para vos.
             </p>
 
-            {/* ✅ CTA: solo Contacto + Catálogo */}
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {whatsappHref ? (
+                <WhatsAppButton href={whatsappHref}>Contactanos por WhatsApp</WhatsAppButton>
+              ) : null}
               <a href="/contact" className="btn btn-primary">
-                Contacto
+                Formulario de contacto
               </a>
               <a href="/products" className="btn btn-ghost">
-                Catálogo
+                Ver catálogo
               </a>
             </div>
-          </div>
-        </section>
-      </SectionFadeIn>
-
-      <SectionFadeIn delay={0.08}>
-        {/* HISTORIA + MEDIA */}
-        <section className="mt-10 grid gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-7">
-            <div className="card p-7 sm:p-8">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
-                Nuestra historia
-              </h2>
-
-              <div className="mt-4 space-y-4 text-[15px] leading-7 text-[var(--text-muted)]">
-                <p>
-                  En <span className="font-extrabold text-[var(--text)]">{brandName}</span> nacimos con una misión simple:
-                  acercar suplementación confiable a cada atleta, desde principiantes hasta profesionales.
-                </p>
-
-                <p>
-                  Empezamos con pocos productos en un showroom, pero con un estándar claro: buena atención, productos reales
-                  y recomendaciones con criterio. Hoy contamos con{' '}
-                  <span className="font-extrabold text-[var(--text)]">2 locales en Formosa capital</span> y hacemos envíos
-                  constantes a todo el país.
-                </p>
-              </div>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-[var(--border)] bg-white/70 p-4">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                    Atención
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-[var(--text)]">
-                    Te asesoramos según tu objetivo
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-[var(--border)] bg-white/70 p-4">
-                  <div className="text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                    Envíos
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-[var(--text)]">
-                    Rápidos y con seguimiento
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="lg:col-span-5 grid gap-4">
-            <div className="card overflow-hidden">
-              <div className="relative aspect-[4/3] bg-white/60">
-                <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm text-[var(--text-muted)]">
-                  Foto real del local / equipo / envíos
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <StatCard label="Trayectoria" value="+3 años" />
-              <StatCard label="Locales" value="2" />
-            </div>
-          </div>
-        </section>
-      </SectionFadeIn>
-
-      <SectionFadeIn delay={0.16}>
-        {/* VALORES */}
-        <section className="mt-10">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
-              Nuestros valores
-            </h2>
-            <p className="mt-2 max-w-2xl text-[14px] sm:text-[15px] leading-6 text-[var(--text-muted)]">
-              Lo que define cómo trabajamos y cómo elegimos productos.
-            </p>
-          </div>
-
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {values.map((v, i) => (
-              <ValueItem key={i} title={v.title} desc={v.desc} icon={v.icon} />
-            ))}
-          </div>
-        </section>
-      </SectionFadeIn>
-
-      <SectionFadeIn delay={0.24}>
-        {/* BLOQUE CONFIANZA + CTA WHATSAPP */}
-        <section className="mt-10">
-          <div className="card p-7 sm:p-10">
-            <div className="grid gap-6 lg:grid-cols-12 lg:items-center">
-              <div className="lg:col-span-8">
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
-                  ¿Por qué elegirnos?
-                </h2>
-                <p className="mt-3 text-[15px] leading-7 text-[var(--text-muted)]">
-                  Te atendemos con criterio y con productos reales. Si no sabés qué llevar, te guiamos para que compres con
-                  confianza.
-                </p>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <span className="badge">Atención personalizada</span>
-                  <span className="badge">Productos verificados</span>
-                  <span className="badge">Envíos rápidos</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      </SectionFadeIn>
-
-      <SectionFadeIn delay={0.32}>
-        {/* CTA FINAL */}
-        <section className="mt-10 text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--text)]">
-            ¿Tenés dudas o querés asesoramiento?
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-[15px] leading-7 text-[var(--text-muted)]">
-            Escríbanos por WhatsApp o pasá por el local. Te ayudamos a elegir lo mejor para vos.
-          </p>
-
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
-            {whatsappHref ? (
-              <WhatsAppButton href={whatsappHref}>Contactanos por WhatsApp</WhatsAppButton>
-            ) : null}
-            <a href="/contact" className="btn btn-primary">
-              Formulario de contacto
-            </a>
-            <a href="/products" className="btn btn-ghost">
-              Ver catálogo
-            </a>
-          </div>
-        </section>
-      </SectionFadeIn>
+          </section>
+        </SectionFadeIn>
+      </div>
     </main>
   );
 }
