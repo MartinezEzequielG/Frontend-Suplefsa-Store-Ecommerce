@@ -6,16 +6,12 @@ async function denyIfCatalog(req: NextRequest) {
   const enabled = await isCartEnabled();
   if (enabled) return null;
 
-  // si viene de form POST, redirigimos al catálogo
   const accept = req.headers.get('accept') || '';
   if (accept.includes('text/html')) {
     return NextResponse.redirect(new URL('/products', req.url), { status: 303 });
   }
 
-  return NextResponse.json(
-    { message: 'Checkout deshabilitado: modo catálogo.' },
-    { status: 403 },
-  );
+  return NextResponse.json({ message: 'Checkout deshabilitado: modo catálogo.' }, { status: 403 });
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ action: string }> }) {
@@ -90,19 +86,63 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
             country: String(fd.get('country') || 'Argentina').trim(),
           },
           shippingCost: Number(fd.get('shippingCost') || 0),
-          paymentMethod: String(fd.get('paymentMethod') || 'COD'),
+          paymentMethod: String(fd.get('paymentMethod') || 'MERCADOPAGO'),
+          email: String(fd.get('email') || '').trim(),
         };
       }
-      // usa /orders (no /orders/checkout) y pasa sessionToken
+
+      // 1) Crear orden (como ya lo hacías)
       const res = await fetch(`${API}/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Cookie: cookie },
         body: JSON.stringify({ ...payload, sessionToken: sid }),
       });
       if (!res.ok) throw new Error(await res.text());
+
       const order = await res.json();
+      const pm = String(payload?.paymentMethod || '').toUpperCase();
+
+      const isMp = pm === 'MP' || pm === 'MERCADOPAGO' || pm === 'MERCADO_PAGO';
+
+      if (isMp) {
+        const prefRes = await fetch(`${API}/payments/preference`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Cookie: cookie,
+            'x-session-id': sid,
+          },
+          body: JSON.stringify({ orderId: order.id }),
+        });
+
+        const prefText = await prefRes.text();
+        if (!prefRes.ok) throw new Error(prefText || 'No se pudo crear la preferencia de MercadoPago');
+
+        const pref = JSON.parse(prefText) as { initPoint: string; sandboxInitPoint?: string | null };
+        const initPoint = pref.initPoint || pref.sandboxInitPoint;
+
+        if (!initPoint) throw new Error('MercadoPago no devolvió initPoint');
+
+        const resp = NextResponse.redirect(initPoint);
+        resp.cookies.set('sid', sid, {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          path: '/',
+          maxAge: 60 * 60 * 24 * 30,
+        });
+        return resp;
+      }
+
+      // 3) Si no es MP, comportamiento actual
       const resp = NextResponse.redirect(new URL(`/orders/${order.id}`, req.url));
-      resp.cookies.set('sid', sid, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 24 * 30 });
+      resp.cookies.set('sid', sid, {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 30,
+      });
       return resp;
     }
 
@@ -111,7 +151,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
     const ref = new URL('/cart', req.url);
     ref.searchParams.set('error', e.message || 'Error');
     const resp = NextResponse.redirect(ref);
-    resp.cookies.set('sid', sid, { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 24 * 30 });
+    resp.cookies.set('sid', sid, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: process.env.NODE_ENV === 'production',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+    });
     return resp;
   }
 }

@@ -61,8 +61,9 @@ export default async function CheckoutPage(props: any) {
 
           <div className="border-t border-(--border) pt-4 space-y-2">
             <h3 className="text-sm font-semibold">Pago</h3>
-            <select name="paymentMethod" defaultValue="COD" required className="border rounded px-3 py-2 w-full">
-              <option value="COD">Pago contra entrega</option>
+            <select name="paymentMethod" defaultValue="MERCADOPAGO" required className="border rounded px-3 py-2 w-full">
+              <option value="MERCADOPAGO">Mercado Pago</option>
+              <option value="TRANSFER">Transferencia</option>
             </select>
           </div>
 

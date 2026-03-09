@@ -15,10 +15,17 @@ type Variant = {
 function availableQty(v: Variant) {
   const onHand = Number(v.onHand ?? 0);
   const reserved = Number(v.reserved ?? 0);
-  const legacy = Number(v.stock ?? 0);
-  // prioriza modelo nuevo
+
+  // modelo nuevo
   if (v.onHand != null || v.reserved != null) return Math.max(0, onHand - reserved);
-  return Math.max(0, legacy);
+
+  // modelo legacy: stock number o stock { available }
+  const s: any = v.stock;
+
+  if (typeof s === 'number') return Math.max(0, s);
+  if (s && typeof s === 'object') return Math.max(0, Number(s.available ?? 0));
+
+  return 0;
 }
 
 export default function VariantsSelector({
