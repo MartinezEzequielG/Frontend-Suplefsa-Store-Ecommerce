@@ -1,42 +1,69 @@
-// src/lib/backend.ts
+function stripTrailingSlash(value?: string | null) {
+  return (value || '').trim().replace(/\/+$/, '');
+}
 
-export const API =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:3001/api/V1';
+export const API = stripTrailingSlash(
+  process.env.BACKEND_API_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_API_URL ||
+    'http://localhost:3001/api/v1'
+);
 
-// OJO: este es el host público del backend (sin /api/v1)
-export const ASSETS_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_PUBLIC_URL || 'http://localhost:3001';
+export const ASSETS_BASE = stripTrailingSlash(
+  process.env.BACKEND_PUBLIC_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_PUBLIC_URL ||
+    'http://localhost:3001'
+);
 
 export function imageUrl(raw?: string | null) {
   const url = (raw || '').trim();
   if (!url) return '/no-image.png';
 
-  // ✅ S3 / CloudFront / URL absoluta
+  // URL absoluta
   if (url.startsWith('http://') || url.startsWith('https://')) return url;
 
-  // ✅ legacy: backend sirve /uploads como estático
+  // legacy uploads
   if (url.startsWith('/uploads/')) return `${ASSETS_BASE}${url}`;
   if (url.startsWith('uploads/')) return `${ASSETS_BASE}/${url}`;
 
-  // ✅ por si te llega "/api/v1/uploads/..."
-  if (url.startsWith('/api/')) return `${ASSETS_BASE}${url.replace(/\/api\/v1/i, '')}`;
+  // por si llega /api/v1/uploads/...
+  if (url.startsWith('/api/')) {
+    return `${ASSETS_BASE}${url.replace(/\/api\/v1/i, '')}`;
+  }
 
-  // fallback: filename suelto
+  // fallback filename suelto
   return `${ASSETS_BASE}/uploads/${url.replace(/^\/+/, '')}`;
 }
 
-export async function backendFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
-    ...init,
-    cache: 'no-store',
-    headers: {
-      ...(init?.headers || {}),
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-  });
+export async function backendFetch<T>(
+  path: string,
+  init?: RequestInit
+): Promise<T | null> {
+  const safePath = path.startsWith('/') ? path : `/${path}`;
+  const url = `${API}${safePath}`;
 
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Backend error ${res.status}: ${text.slice(0, 500)}`);
-  return JSON.parse(text) as T;
+  try {
+    const res = await fetch(url, {
+      ...init,
+      cache: 'no-store',
+      headers: {
+        Accept: 'application/json',
+        ...(init?.headers || {}),
+      },
+    });
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      console.error(`[backendFetch] ${res.status} ${url}`);
+      console.error(text.slice(0, 500));
+      return null;
+    }
+
+    if (!text) return null;
+
+    return JSON.parse(text) as T;
+  } catch (error) {
+    console.error(`[backendFetch] fetch failed: ${url}`, error);
+    return null;
+  }
 }
