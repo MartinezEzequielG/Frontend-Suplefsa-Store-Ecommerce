@@ -37,33 +37,28 @@ export function imageUrl(raw?: string | null) {
 export async function backendFetch<T>(
   path: string,
   init?: RequestInit
-): Promise<T | null> {
+): Promise<T> {
   const safePath = path.startsWith('/') ? path : `/${path}`;
   const url = `${API}${safePath}`;
 
-  try {
-    const res = await fetch(url, {
-      ...init,
-      cache: 'no-store',
-      headers: {
-        Accept: 'application/json',
-        ...(init?.headers || {}),
-      },
-    });
+  const res = await fetch(url, {
+    ...init,
+    cache: 'no-store',
+    headers: {
+      Accept: 'application/json',
+      ...(init?.headers || {}),
+    },
+  });
 
-    const text = await res.text();
+  const text = await res.text();
 
-    if (!res.ok) {
-      console.error(`[backendFetch] ${res.status} ${url}`);
-      console.error(text.slice(0, 500));
-      return null;
-    }
-
-    if (!text) return null;
-
-    return JSON.parse(text) as T;
-  } catch (error) {
-    console.error(`[backendFetch] fetch failed: ${url}`, error);
-    return null;
+  if (!res.ok) {
+    throw new Error(`[backendFetch] ${res.status} ${url}: ${text.slice(0, 500)}`);
   }
+
+  if (!text) {
+    throw new Error(`[backendFetch] respuesta vacia: ${url}`);
+  }
+
+  return JSON.parse(text) as T;
 }
