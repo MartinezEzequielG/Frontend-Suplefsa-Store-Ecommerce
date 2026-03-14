@@ -10,6 +10,15 @@ const SID_COOKIE = {
   maxAge: 60 * 60 * 24 * 30,
 };
 
+const TRUSTED_EXTERNAL_REDIRECT_HOSTS = [
+  'www.mercadopago.com',
+  'www.mercadopago.com.ar',
+  'sandbox.mercadopago.com',
+  'sandbox.mercadopago.com.ar',
+  'mercadopago.com',
+  'mercadopago.com.ar',
+];
+
 function stripTrailingSlash(value?: string | null) {
   return (value || '').trim().replace(/\/+$/, '');
 }
@@ -30,27 +39,36 @@ function getSiteBase(req: NextRequest) {
   return `${proto}://${host}`;
 }
 
-function toAppUrl(req: NextRequest, target: string) {
+function toInternalAppUrl(req: NextRequest, target: string) {
   const base = getSiteBase(req);
-
-  if (/^https?:\/\//i.test(target)) {
-    const absolute = new URL(target);
-    const site = new URL(base);
-
-    // Evita open redirects a dominios externos no esperados.
-    if (absolute.origin !== site.origin) {
-      return new URL('/', site);
-    }
-
-    return absolute;
-  }
-
   const safeTarget = target.startsWith('/') ? target : `/${target}`;
   return new URL(safeTarget, base);
 }
 
-function redirectWithSid(req: NextRequest, target: string, sid: string, status?: number) {
-  const resp = NextResponse.redirect(toAppUrl(req, target), status);
+function isTrustedExternalUrl(target: string) {
+  try {
+    const parsed = new URL(target);
+    return TRUSTED_EXTERNAL_REDIRECT_HOSTS.some(
+      (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`),
+    );
+  } catch {
+    return false;
+  }
+}
+
+function redirectInternalWithSid(
+  req: NextRequest,
+  target: string,
+  sid: string,
+  status?: number,
+) {
+  const resp = NextResponse.redirect(toInternalAppUrl(req, target), status);
+  resp.cookies.set('sid', sid, SID_COOKIE);
+  return resp;
+}
+
+function redirectExternalWithSid(target: string, sid: string, status?: number) {
+  const resp = NextResponse.redirect(target, status);
   resp.cookies.set('sid', sid, SID_COOKIE);
   return resp;
 }
@@ -59,6 +77,7 @@ function readErrorMessage(raw: string) {
   try {
     const parsed = JSON.parse(raw);
     if (typeof parsed?.message === 'string') return parsed.message;
+    if (Array.isArray(parsed?.message)) return parsed.message.join(', ');
   } catch {}
   return raw || 'Error';
 }
@@ -69,7 +88,7 @@ async function denyIfCatalog(req: NextRequest) {
 
   const accept = req.headers.get('accept') || '';
   if (accept.includes('text/html')) {
-    return NextResponse.redirect(toAppUrl(req, '/products'), { status: 303 });
+    return NextResponse.redirect(toInternalAppUrl(req, '/products'), { status: 303 });
   }
 
   return NextResponse.json(
@@ -107,7 +126,7 @@ export async function POST(
       });
 
       if (!res.ok) throw new Error(readErrorMessage(await res.text()));
-      return redirectWithSid(req, '/cart', sid);
+      return redirectInternalWithSid(req, '/cart', sid);
     }
 
     if (action === 'remove') {
@@ -122,7 +141,7 @@ export async function POST(
       });
 
       if (!res.ok) throw new Error(readErrorMessage(await res.text()));
-      return redirectWithSid(req, '/cart', sid);
+      return redirectInternalWithSid(req, '/cart', sid);
     }
 
     if (action === 'add') {
@@ -149,7 +168,7 @@ export async function POST(
           ? nextParam
           : '/cart';
 
-      return redirectWithSid(req, next, sid);
+      return redirectInternalWithSid(req, next, sid);
     }
 
     if (action === 'checkout') {
@@ -223,10 +242,14 @@ export async function POST(
           throw new Error('MercadoPago no devolvió initPoint');
         }
 
-        return redirectWithSid(req, initPoint, sid);
+        if (!isTrustedExternalUrl(initPoint)) {
+          throw new Error('MercadoPago devolvió una URL de redirección no permitida');
+        }
+
+        return redirectExternalWithSid(initPoint, sid);
       }
 
-      return redirectWithSid(req, `/orders/${order.id}`, sid);
+      return redirectInternalWithSid(req, `/orders/${order.id}`, sid);
     }
 
     return NextResponse.json({ error: 'Acción no soportada' }, { status: 400 });
@@ -234,7 +257,7 @@ export async function POST(
     const isCheckout = action === 'checkout';
     const message = encodeURIComponent(e?.message || 'Error');
     const target = isCheckout ? `/checkout?error=${message}` : `/cart?error=${message}`;
-    return redirectWithSid(req, target, sid);
+    return redirectInternalWithSid(req, target, sid);
   }
 }
 
