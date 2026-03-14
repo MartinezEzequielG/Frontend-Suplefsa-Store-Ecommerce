@@ -5,7 +5,7 @@ function stripTrailingSlash(value?: string | null) {
 export const API = stripTrailingSlash(
   process.env.BACKEND_API_URL ||
     process.env.NEXT_PUBLIC_BACKEND_API_URL ||
-    'http://localhost:3001/api/v1'
+    'http://localhost:3001/api/V1'
 );
 
 export const ASSETS_BASE = stripTrailingSlash(

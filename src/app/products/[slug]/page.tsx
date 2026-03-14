@@ -144,7 +144,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {Array.isArray(p.variants) && p.variants.length > 0 && Array.isArray(p.options) && p.options.length > 0 ? (
             cartEnabled ? (
               <form
-                action={`/cart/actions/add?next=${encodeURIComponent(`/products/${slug}?added=1`)}`}
+                action="/cart/actions/add?next=/cart"
                 method="POST"
                 className="space-y-4 pt-4"
               >
@@ -165,7 +165,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             )
           ) : cartEnabled ? (
             <form
-              action={`/cart/actions/add?next=${encodeURIComponent(`/products/${slug}?added=1`)}`}
+              action="/cart/actions/add?next=/cart"
               method="POST"
               className="space-y-4 pt-4"
             >

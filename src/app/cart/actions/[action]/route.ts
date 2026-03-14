@@ -69,39 +69,39 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
     }
 
     if (action === 'checkout') {
-      let payload: any;
-      const ctype = req.headers.get('content-type') || '';
-      if (ctype.includes('application/json')) {
-        payload = await req.json();
-      } else {
-        const fd = await req.formData();
-        payload = {
-          shipping: {
-            fullName: String(fd.get('fullName') || '').trim(),
-            phone: String(fd.get('phone') || '').trim(),
-            street: String(fd.get('street') || '').trim(),
-            city: String(fd.get('city') || '').trim(),
-            state: String(fd.get('state') || '').trim(),
-            zip: String(fd.get('zip') || '').trim(),
-            country: String(fd.get('country') || 'Argentina').trim(),
-          },
-          shippingCost: Number(fd.get('shippingCost') || 0),
-          paymentMethod: String(fd.get('paymentMethod') || 'MERCADOPAGO'),
-          email: String(fd.get('email') || '').trim(),
-        };
-      }
+      const fd = await req.formData();
 
-      // 1) Crear orden (como ya lo hacías)
-      const res = await fetch(`${API}/orders`, {
+      const payload = {
+        checkoutToken: crypto.randomUUID(),
+        guestSessionToken: sid,
+        shipping: {
+          fullName: String(fd.get('fullName') || '').trim(),
+          email: String(fd.get('email') || '').trim(),
+          phone: String(fd.get('phone') || '').trim(),
+          street: String(fd.get('street') || '').trim(),
+          city: String(fd.get('city') || '').trim(),
+          state: String(fd.get('state') || '').trim(),
+          zip: String(fd.get('zip') || '').trim(),
+          country: String(fd.get('country') || 'Argentina').trim(),
+        },
+        shippingCost: Number(fd.get('shippingCost') || 0),
+        paymentMethod: String(fd.get('paymentMethod') || 'MERCADOPAGO'),
+      };
+
+      const res = await fetch(`${API}/orders/checkout`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Cookie: cookie },
-        body: JSON.stringify({ ...payload, sessionToken: sid }),
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: cookie,
+          'x-session-id': sid,
+        },
+        body: JSON.stringify(payload),
       });
+
       if (!res.ok) throw new Error(await res.text());
 
       const order = await res.json();
-      const pm = String(payload?.paymentMethod || '').toUpperCase();
-
+      const pm = String(payload.paymentMethod || '').toUpperCase();
       const isMp = pm === 'MP' || pm === 'MERCADOPAGO' || pm === 'MERCADO_PAGO';
 
       if (isMp) {
@@ -118,9 +118,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
         const prefText = await prefRes.text();
         if (!prefRes.ok) throw new Error(prefText || 'No se pudo crear la preferencia de MercadoPago');
 
-        const pref = JSON.parse(prefText) as { initPoint: string; sandboxInitPoint?: string | null };
-        const initPoint = pref.initPoint || pref.sandboxInitPoint;
+        const pref = JSON.parse(prefText) as {
+          initPoint?: string;
+          sandboxInitPoint?: string | null;
+        };
 
+        const initPoint = pref.initPoint || pref.sandboxInitPoint;
         if (!initPoint) throw new Error('MercadoPago no devolvió initPoint');
 
         const resp = NextResponse.redirect(initPoint);
@@ -134,7 +137,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
         return resp;
       }
 
-      // 3) Si no es MP, comportamiento actual
       const resp = NextResponse.redirect(new URL(`/orders/${order.id}`, req.url));
       resp.cookies.set('sid', sid, {
         httpOnly: true,
@@ -148,7 +150,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ act
 
     return NextResponse.json({ error: 'Acción no soportada' }, { status: 400 });
   } catch (e: any) {
-    const ref = new URL('/cart', req.url);
+    const ref = new URL('/checkout', req.url);
     ref.searchParams.set('error', e.message || 'Error');
     const resp = NextResponse.redirect(ref);
     resp.cookies.set('sid', sid, {
