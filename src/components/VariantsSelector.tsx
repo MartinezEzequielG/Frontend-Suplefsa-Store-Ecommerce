@@ -55,7 +55,7 @@ export default function VariantsSelector({
     if (!options?.length) return null;
     if (selectedValueIds.length !== options.length) return null;
 
-    const desiredKey = [...selectedValueIds].sort((a, b) => a - b).join('-');
+    const desiredSet = new Set(selectedValueIds);
 
     return (
       inStock.find((v) => {
@@ -63,10 +63,10 @@ export default function VariantsSelector({
           .map((o) => o.optionValue?.id)
           .filter((x): x is number => typeof x === 'number');
 
-        if (vIds.length !== options.length) return false;
-
-        const key = [...vIds].sort((a, b) => a - b).join('-');
-        return key === desiredKey;
+        return (
+          vIds.length >= selectedValueIds.length &&
+          selectedValueIds.every((id) => vIds.includes(id))
+        );
       }) ?? null
     );
   }, [inStock, options, selectedValueIds]);
