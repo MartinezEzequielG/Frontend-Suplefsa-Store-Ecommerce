@@ -16,12 +16,9 @@ function availableQty(v: Variant) {
   const onHand = Number(v.onHand ?? 0);
   const reserved = Number(v.reserved ?? 0);
 
-  // modelo nuevo
   if (v.onHand != null || v.reserved != null) return Math.max(0, onHand - reserved);
 
-  // modelo legacy: stock number o stock { available }
   const s: any = v.stock;
-
   if (typeof s === 'number') return Math.max(0, s);
   if (s && typeof s === 'object') return Math.max(0, Number(s.available ?? 0));
 
@@ -43,53 +40,67 @@ export default function VariantsSelector({
 }) {
   const inStock = useMemo(() => (variants || []).filter((v) => availableQty(v) > 0), [variants]);
 
+  const effectiveOptions = useMemo(() => {
+    const usedValueIds = new Set(
+      inStock.flatMap((variant) =>
+        (variant.options || [])
+          .map((entry) => entry.optionValue?.id)
+          .filter((id): id is number => typeof id === 'number'),
+      ),
+    );
+
+    return (options || [])
+      .map((opt) => {
+        const usedValues = (opt.values || []).filter((value) => usedValueIds.has(value.id));
+        if (usedValues.length === 0) return null;
+        return { ...opt, values: usedValues };
+      })
+      .filter(Boolean) as ProductOption[];
+  }, [options, inStock]);
+
   const [sel, setSel] = useState<Record<number, number | ''>>(() => {
     const init: Record<number, number | ''> = {};
     for (const opt of options || []) init[opt.id] = '';
     return init;
   });
 
-  const selectedValueIds = Object.values(sel).filter((x): x is number => typeof x === 'number');
+  const selectedValueIds = effectiveOptions
+    .map((opt) => sel[opt.id])
+    .filter((x): x is number => typeof x === 'number');
 
   const matchedVariant = useMemo(() => {
-    if (!options?.length) return null;
-    if (selectedValueIds.length !== options.length) return null;
-
-    const desiredSet = new Set(selectedValueIds);
+    if (!effectiveOptions.length) return null;
+    if (selectedValueIds.length !== effectiveOptions.length) return null;
 
     return (
-      inStock.find((v) => {
-        const vIds = (v.options || [])
-          .map((o) => o.optionValue?.id)
-          .filter((x): x is number => typeof x === 'number');
+      inStock.find((variant) => {
+        const variantIds = (variant.options || [])
+          .map((entry) => entry.optionValue?.id)
+          .filter((id): id is number => typeof id === 'number');
 
-        return (
-          vIds.length >= selectedValueIds.length &&
-          selectedValueIds.every((id) => vIds.includes(id))
-        );
+        return selectedValueIds.every((id) => variantIds.includes(id));
       }) ?? null
     );
-  }, [inStock, options, selectedValueIds]);
+  }, [effectiveOptions, inStock, selectedValueIds]);
 
   const matchedVariantId = matchedVariant?.id ?? '';
   const matchedAvailable = matchedVariant ? availableQty(matchedVariant) : 0;
 
-  // ✅ Texto humano de la variante (ej: "Chocolate / 2 kg")
   const selectedLabel = useMemo(() => {
-    if (!options?.length) return '';
-    if (selectedValueIds.length !== options.length) return '';
+    if (!effectiveOptions.length) return '';
+    if (selectedValueIds.length !== effectiveOptions.length) return '';
 
-    const parts = options
+    const parts = effectiveOptions
       .map((opt) => {
         const valueId = sel[opt.id];
         if (typeof valueId !== 'number') return null;
-        const v = opt.values.find((x) => x.id === valueId);
-        return v?.value ?? null;
+        const value = opt.values.find((item) => item.id === valueId);
+        return value?.value ?? null;
       })
       .filter(Boolean) as string[];
 
     return parts.join(' / ');
-  }, [options, sel, selectedValueIds.length]);
+  }, [effectiveOptions, sel, selectedValueIds.length]);
 
   const waDigits = useMemo(
     () => (whatsappNumber ? whatsappNumber.replace(/\D/g, '') : ''),
@@ -102,19 +113,16 @@ export default function VariantsSelector({
     const lines: string[] = [];
     lines.push('Hola! Quiero pedir este producto.');
     if (productName) lines.push(`Producto: ${productName}`);
-
-    // ✅ Enviar descripción en vez del id interno
     if (matchedVariantId && selectedLabel) lines.push(`Variante: ${selectedLabel}`);
 
-    const text = lines.join('\n');
-    return `https://wa.me/${waDigits}?text=${encodeURIComponent(text)}`;
+    return `https://wa.me/${waDigits}?text=${encodeURIComponent(lines.join('\n'))}`;
   }, [waDigits, productName, matchedVariantId, selectedLabel]);
 
-  if (!options?.length || !variants?.length) return null;
+  if (!effectiveOptions.length || !variants?.length) return null;
 
   return (
     <div className="space-y-3">
-      {(options || []).map((opt) => (
+      {effectiveOptions.map((opt) => (
         <label key={opt.id} className="block text-sm">
           <span className="text-xs text-(--text-muted)">{opt.name}</span>
 
@@ -122,16 +130,16 @@ export default function VariantsSelector({
             className="mt-1 w-full border border-(--border) rounded-md px-3 py-2 text-sm bg-(--surface)"
             value={sel[opt.id]}
             onChange={(e) =>
-              setSel((p) => ({
-                ...p,
+              setSel((prev) => ({
+                ...prev,
                 [opt.id]: e.target.value ? Number(e.target.value) : '',
               }))
             }
           >
             <option value="">Elegí {opt.name.toLowerCase()}</option>
-            {opt.values.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.value}
+            {opt.values.map((value) => (
+              <option key={value.id} value={value.id}>
+                {value.value}
               </option>
             ))}
           </select>
@@ -174,7 +182,9 @@ export default function VariantsSelector({
       )}
 
       {!matchedVariantId ? (
-        <p className="text-xs text-red-600">Elegí una combinación válida (con stock) para continuar.</p>
+        <p className="text-xs text-red-600">
+          Elegí una combinación válida (con stock) para continuar.
+        </p>
       ) : (
         <p className="text-xs text-(--text-muted)">
           Stock disponible: <strong>{matchedAvailable}</strong>
