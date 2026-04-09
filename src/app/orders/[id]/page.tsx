@@ -327,7 +327,9 @@ export default async function OrderDetail({
             <div className="mt-5 space-y-2 border-t border-zinc-200 pt-4 text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-zinc-600">Envío</span>
-                <span className="font-medium text-zinc-900">{formatPrice(order.shippingCost || 0)}</span>
+                <span className="font-medium text-zinc-900">
+                  {Number(order.shippingCost ?? 0) > 0 ? formatPrice(order.shippingCost) : 'A convenir'}
+                </span>
               </div>
               <div className="flex items-center justify-between text-base">
                 <span className="font-semibold text-zinc-900">Total pagado</span>
