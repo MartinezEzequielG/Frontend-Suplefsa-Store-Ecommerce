@@ -198,6 +198,11 @@ export async function POST(
         };
       }
 
+       console.log('CHECKOUT PAYLOAD', {
+        paymentMethod: payload.paymentMethod,
+        shippingCost: payload.shippingCost,
+      });
+
       const checkoutRes = await fetch(`${API}/orders/checkout`, {
         method: 'POST',
         headers: {

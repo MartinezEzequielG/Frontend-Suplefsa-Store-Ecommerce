@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { cookies } from 'next/headers';
 import CheckoutSteps from '@/components/CheckoutSteps';
 import OrderActions from '@/components/OrderActions';
+import OrderTransferInfo from '@/components/OrderTransferInfo';
 import { API, imageUrl } from '@/lib/backend';
 import { formatPrice } from '@/lib/format';
 import { getSiteConfig } from '@/lib/site';
@@ -114,7 +115,11 @@ function getPaymentVisualState(mp?: string, status?: string, orderStatus?: strin
     };
   }
 
-  if (normalizedMp === 'failure' || normalizedStatus === 'rejected' || normalizedStatus === 'cancelled') {
+  if (
+    normalizedMp === 'failure' ||
+    normalizedStatus === 'rejected' ||
+    normalizedStatus === 'cancelled'
+  ) {
     return {
       badge: 'Pago no acreditado',
       tone: 'red',
@@ -166,6 +171,70 @@ function toneClasses(tone: string) {
   }
 }
 
+function getPaymentLabel(paymentMethod?: string | null) {
+  const normalized = String(paymentMethod || '').toUpperCase();
+
+  if (normalized === 'TRANSFER' || normalized === 'MP_TRANSFER') {
+    return 'Transferencia';
+  }
+
+  if (normalized === 'MERCADOPAGO' || normalized === 'MP') {
+    return 'Mercado Pago';
+  }
+
+  return paymentMethod || 'No informado';
+}
+
+function getOrderItemsWhatsappText(items?: OrderItem[]) {
+  if (!items?.length) {
+    return 'Productos: No disponibles';
+  }
+
+  const lines = items.map((item, index) => {
+    const productName = item.product?.name || 'Producto';
+    const variantLabel = getVariantLabel(item);
+    const unitPrice = Number(item.unitPrice || 0);
+    const quantity = Number(item.quantity || 0);
+    const subtotal = unitPrice * quantity;
+
+    return [
+      `${index + 1}. ${productName}`,
+      variantLabel ? `   Variante: ${variantLabel}` : null,
+      `   Cantidad: ${quantity}`,
+      `   Precio unitario: ${formatPrice(unitPrice)}`,
+      `   Subtotal: ${formatPrice(subtotal)}`,
+    ]
+      .filter(Boolean)
+      .join('\n');
+  });
+
+  return ['Productos:', ...lines].join('\n');
+}
+
+function getShippingWhatsappText(order: PublicOrder) {
+  const address = order.shippingAddress;
+
+  return [
+    'Datos de entrega:',
+    `Nombre: ${address?.fullName || 'No informado'}`,
+    address?.phone ? `WhatsApp/Teléfono: ${address.phone}` : null,
+    address?.email ? `Email: ${address.email}` : null,
+    `Dirección: ${
+      [
+        address?.street,
+        address?.city,
+        address?.state,
+        address?.zip,
+        address?.country,
+      ]
+        .filter(Boolean)
+        .join(', ') || 'No informada'
+    }`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
 export default async function OrderDetail({
   params,
   searchParams,
@@ -195,6 +264,7 @@ export default async function OrderDetail({
   const visual = getPaymentVisualState(mp, status, order.status);
   const colors = toneClasses(visual.tone);
   const waDigits = String(site?.whatsappNumber || '').replace(/\D/g, '');
+
   const createdAt = order.createdAt
     ? new Intl.DateTimeFormat('es-AR', {
         dateStyle: 'medium',
@@ -202,15 +272,60 @@ export default async function OrderDetail({
       }).format(new Date(order.createdAt))
     : null;
 
-  const waText = [
-    'Hola, quiero compartir mi comprobante de compra.',
+  const paymentMethod = String(order.paymentMethod || '').toUpperCase();
+  const isTransferOrder = paymentMethod === 'TRANSFER' || paymentMethod === 'MP_TRANSFER';
+
+  const transferInfo = {
+    alias: process.env.NEXT_PUBLIC_TRANSFER_ALIAS || '',
+    cbu: process.env.NEXT_PUBLIC_TRANSFER_CBU || '',
+    holder: process.env.NEXT_PUBLIC_TRANSFER_HOLDER || '',
+    bank: process.env.NEXT_PUBLIC_TRANSFER_BANK || '',
+    note:
+      process.env.NEXT_PUBLIC_TRANSFER_NOTE ||
+      'Luego de realizar la transferencia, envianos el comprobante por WhatsApp para coordinar la entrega.',
+  };
+
+  const itemsText = getOrderItemsWhatsappText(order.items);
+  const shippingText = getShippingWhatsappText(order);
+
+  const transferWaText = [
+    'Hola! Ya registré mi pedido por transferencia.',
+    '',
     `Orden: #${order.id}`,
+    `Estado del pedido: ${order.status}`,
+    `Método de pago: ${getPaymentLabel(order.paymentMethod)}`,
+    '',
+    itemsText,
+    '',
+    `Envío: ${Number(order.shippingCost ?? 0) > 0 ? formatPrice(order.shippingCost) : 'A convenir'}`,
+    `Total: ${formatPrice(order.total)}`,
+    '',
+    shippingText,
+    '',
+    'Te envío el comprobante para coordinar la entrega.',
+  ].join('\n');
+
+  const transferWhatsappHref = waDigits
+    ? `https://wa.me/${waDigits}?text=${encodeURIComponent(transferWaText)}`
+    : '';
+
+  const waText = [
+    'Hola! Quiero compartir mi comprobante de compra.',
+    '',
+    `Orden: #${order.id}`,
+    `Estado del pedido: ${order.status}`,
+    `Método de pago: ${getPaymentLabel(order.paymentMethod)}`,
     payment_id ? `Pago MP: ${payment_id}` : null,
     status ? `Estado MP: ${status}` : null,
-    `Estado del pedido: ${order.status}`,
+    '',
+    itemsText,
+    '',
+    `Envío: ${Number(order.shippingCost ?? 0) > 0 ? formatPrice(order.shippingCost) : 'A convenir'}`,
     `Total: ${formatPrice(order.total)}`,
+    '',
+    shippingText,
   ]
-    .filter(Boolean)
+    .filter((line) => line !== null && line !== undefined)
     .join('\n');
 
   const whatsappHref = waDigits
@@ -248,7 +363,9 @@ export default async function OrderDetail({
 
             {payment_id ? (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">ID de pago</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  ID de pago
+                </p>
                 <p className="text-sm font-semibold text-zinc-900 break-all">{payment_id}</p>
               </div>
             ) : null}
@@ -273,9 +390,23 @@ export default async function OrderDetail({
         </div>
 
         <div className="mt-5 print:hidden">
-          <OrderActions whatsappHref={whatsappHref} />
+          <OrderActions whatsappHref={isTransferOrder ? '' : whatsappHref} />
         </div>
       </section>
+
+      {isTransferOrder ? (
+        <div className="mt-6">
+          <OrderTransferInfo
+            orderId={order.id}
+            alias={transferInfo.alias}
+            cbu={transferInfo.cbu}
+            holder={transferInfo.holder}
+            bank={transferInfo.bank}
+            note={transferInfo.note}
+            whatsappHref={transferWhatsappHref}
+          />
+        </div>
+      ) : null}
 
       <section className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="space-y-6">
@@ -287,6 +418,7 @@ export default async function OrderDetail({
                   Conservá este resumen para cualquier consulta sobre tu pedido.
                 </p>
               </div>
+
               <span className="hidden rounded-full bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700 sm:inline-flex">
                 No fiscal
               </span>
@@ -295,8 +427,12 @@ export default async function OrderDetail({
             <ul className="space-y-4">
               {(order.items || []).map((item) => {
                 const variantLabel = getVariantLabel(item);
+
                 return (
-                  <li key={item.id} className="flex items-start gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+                  <li
+                    key={item.id}
+                    className="flex items-start gap-4 rounded-xl border border-zinc-200 bg-zinc-50 p-3"
+                  >
                     <img
                       src={imageUrl(item.product?.images?.[0]?.url)}
                       alt={item.product?.name || 'Producto'}
@@ -305,9 +441,11 @@ export default async function OrderDetail({
 
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-zinc-900">{item.product?.name}</p>
+
                       {variantLabel ? (
                         <p className="mt-1 text-xs text-zinc-500">{variantLabel}</p>
                       ) : null}
+
                       <p className="mt-1 text-xs text-zinc-500">
                         {item.quantity} × {formatPrice(item.unitPrice)}
                       </p>
@@ -328,9 +466,12 @@ export default async function OrderDetail({
               <div className="flex items-center justify-between">
                 <span className="text-zinc-600">Envío</span>
                 <span className="font-medium text-zinc-900">
-                  {Number(order.shippingCost ?? 0) > 0 ? formatPrice(order.shippingCost) : 'A convenir'}
+                  {Number(order.shippingCost ?? 0) > 0
+                    ? formatPrice(order.shippingCost)
+                    : 'A convenir'}
                 </span>
               </div>
+
               <div className="flex items-center justify-between text-base">
                 <span className="font-semibold text-zinc-900">Total pagado</span>
                 <span className="font-extrabold text-zinc-900">{formatPrice(order.total)}</span>
@@ -348,18 +489,21 @@ export default async function OrderDetail({
                 <span className="font-semibold text-zinc-900">Nombre:</span>{' '}
                 {order.shippingAddress?.fullName || 'No disponible'}
               </p>
+
               {order.shippingAddress?.email ? (
                 <p>
                   <span className="font-semibold text-zinc-900">Email:</span>{' '}
                   {order.shippingAddress.email}
                 </p>
               ) : null}
+
               {order.shippingAddress?.phone ? (
                 <p>
                   <span className="font-semibold text-zinc-900">Teléfono:</span>{' '}
                   {order.shippingAddress.phone}
                 </p>
               ) : null}
+
               <p>
                 <span className="font-semibold text-zinc-900">Dirección:</span>{' '}
                 {[
@@ -383,7 +527,7 @@ export default async function OrderDetail({
             </p>
 
             <div className="mt-4 flex flex-col gap-3">
-              {whatsappHref ? (
+              {!isTransferOrder && whatsappHref ? (
                 <a
                   href={whatsappHref}
                   target="_blank"
