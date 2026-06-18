@@ -26,6 +26,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
   const lowStock = p.variants?.some((v: any) => v?.stock?.available > 0 && v?.stock?.available <= 3);
 
+  const addToCartNext = `/products/${slug}?cart=open`;
+  const addToCartAction = `/cart/actions/add?next=${encodeURIComponent(addToCartNext)}`;
+
   return (
     <main className="mx-auto max-w-6xl px-4 sm:px-6 py-8 sm:py-10">
       {/* Alerta de stock bajo */}
@@ -144,7 +147,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           {Array.isArray(p.variants) && p.variants.length > 0 && Array.isArray(p.options) && p.options.length > 0 ? (
             cartEnabled ? (
               <form
-                action="/cart/actions/add?next=/cart"
+                action={addToCartAction}
                 method="POST"
                 className="space-y-4 pt-4"
               >
@@ -165,7 +168,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             )
           ) : cartEnabled ? (
             <form
-              action="/cart/actions/add?next=/cart"
+              action={addToCartAction}
               method="POST"
               className="space-y-4 pt-4"
             >

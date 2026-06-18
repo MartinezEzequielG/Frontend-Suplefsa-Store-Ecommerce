@@ -48,6 +48,7 @@ function toInternalAppUrl(req: NextRequest, target: string) {
 function isTrustedExternalUrl(target: string) {
   try {
     const parsed = new URL(target);
+
     return TRUSTED_EXTERNAL_REDIRECT_HOSTS.some(
       (host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`),
     );
@@ -73,12 +74,20 @@ function redirectExternalWithSid(target: string, sid: string, status?: number) {
   return resp;
 }
 
+function jsonWithSid(body: any, sid: string, status = 200) {
+  const resp = NextResponse.json(body, { status });
+  resp.cookies.set('sid', sid, SID_COOKIE);
+  return resp;
+}
+
 function readErrorMessage(raw: string) {
   try {
     const parsed = JSON.parse(raw);
+
     if (typeof parsed?.message === 'string') return parsed.message;
     if (Array.isArray(parsed?.message)) return parsed.message.join(', ');
   } catch {}
+
   return raw || 'Error';
 }
 
@@ -87,6 +96,7 @@ async function denyIfCatalog(req: NextRequest) {
   if (enabled) return null;
 
   const accept = req.headers.get('accept') || '';
+
   if (accept.includes('text/html')) {
     return NextResponse.redirect(toInternalAppUrl(req, '/products'), { status: 303 });
   }
@@ -109,6 +119,10 @@ export async function POST(
   const cookie = req.headers.get('cookie') || '';
   const sid = req.cookies.get('sid')?.value || crypto.randomUUID();
 
+  const wantsJson =
+    url.searchParams.get('mode') === 'json' ||
+    (req.headers.get('accept') || '').includes('application/json');
+
   try {
     if (action === 'update') {
       const id = Number(url.searchParams.get('id'));
@@ -126,6 +140,11 @@ export async function POST(
       });
 
       if (!res.ok) throw new Error(readErrorMessage(await res.text()));
+
+      if (wantsJson) {
+        return jsonWithSid({ ok: true }, sid);
+      }
+
       return redirectInternalWithSid(req, '/cart', sid);
     }
 
@@ -141,6 +160,11 @@ export async function POST(
       });
 
       if (!res.ok) throw new Error(readErrorMessage(await res.text()));
+
+      if (wantsJson) {
+        return jsonWithSid({ ok: true }, sid);
+      }
+
       return redirectInternalWithSid(req, '/cart', sid);
     }
 
@@ -161,6 +185,10 @@ export async function POST(
       });
 
       if (!res.ok) throw new Error(readErrorMessage(await res.text()));
+
+      if (wantsJson) {
+        return jsonWithSid({ ok: true }, sid);
+      }
 
       const nextParam = url.searchParams.get('next');
       const next =
@@ -198,11 +226,6 @@ export async function POST(
         };
       }
 
-       console.log('CHECKOUT PAYLOAD', {
-        paymentMethod: payload.paymentMethod,
-        shippingCost: payload.shippingCost,
-      });
-
       const checkoutRes = await fetch(`${API}/orders/checkout`, {
         method: 'POST',
         headers: {
@@ -233,8 +256,11 @@ export async function POST(
         });
 
         const prefText = await prefRes.text();
+
         if (!prefRes.ok) {
-          throw new Error(readErrorMessage(prefText) || 'No se pudo crear la preferencia de MercadoPago');
+          throw new Error(
+            readErrorMessage(prefText) || 'No se pudo crear la preferencia de MercadoPago',
+          );
         }
 
         const pref = JSON.parse(prefText) as {
@@ -243,6 +269,7 @@ export async function POST(
         };
 
         const initPoint = pref.initPoint || pref.sandboxInitPoint;
+
         if (!initPoint) {
           throw new Error('MercadoPago no devolvió initPoint');
         }
@@ -257,11 +284,24 @@ export async function POST(
       return redirectInternalWithSid(req, `/orders/${order.id}`, sid);
     }
 
+    if (wantsJson) {
+      return jsonWithSid({ ok: false, message: 'Acción no soportada' }, sid, 400);
+    }
+
     return NextResponse.json({ error: 'Acción no soportada' }, { status: 400 });
   } catch (e: any) {
     const isCheckout = action === 'checkout';
-    const message = encodeURIComponent(e?.message || 'Error');
-    const target = isCheckout ? `/checkout?error=${message}` : `/cart?error=${message}`;
+    const message = e?.message || 'Error';
+
+    if (wantsJson) {
+      return jsonWithSid({ ok: false, message }, sid, 400);
+    }
+
+    const encodedMessage = encodeURIComponent(message);
+    const target = isCheckout
+      ? `/checkout?error=${encodedMessage}`
+      : `/cart?error=${encodedMessage}`;
+
     return redirectInternalWithSid(req, target, sid);
   }
 }

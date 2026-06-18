@@ -4,6 +4,7 @@ import "./globals.css";
 import { HeaderShell } from "@/components/HeaderShell";
 import { Footer } from "@/components/Footer";
 import { WhatsappFloatButton } from "@/components/WhatsappFloatButton";
+import CartDrawer from "@/components/cart/CartDrawer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <HeaderShell />
         {children}
+        <CartDrawer />
         <Footer />
         <WhatsappFloatButton />
       </body>
