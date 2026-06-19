@@ -161,17 +161,17 @@ function BrandMark({
   brandName: string;
 }) {
   return (
-    <span className="flex min-w-0 items-center gap-3">
-      <span className="relative flex h-14 w-14 shrink-0 items-center justify-center">
+    <span className="flex min-w-0 items-center gap-3.5">
+      <span className="relative flex h-[62px] w-[62px] shrink-0 items-center justify-center">
         <span className="absolute -top-1 left-1/2 z-20 flex -translate-x-1/2 items-center gap-[1px]">
-          <span className="text-[9px] leading-none text-amber-400">★</span>
           <span className="text-[10px] leading-none text-amber-400">★</span>
-          <span className="text-[9px] leading-none text-amber-400">★</span>
+          <span className="text-[11px] leading-none text-amber-400">★</span>
+          <span className="text-[10px] leading-none text-amber-400">★</span>
         </span>
 
         <span
           className="
-            relative flex h-12 w-12 items-center justify-center overflow-hidden
+            relative flex h-[52px] w-[52px] items-center justify-center overflow-hidden
             rounded-full border border-sky-100 bg-white shadow-sm ring-4 ring-sky-50/80
           "
         >
@@ -182,10 +182,10 @@ function BrandMark({
             <img
               src={logoUrl}
               alt={brandName}
-              className="relative z-10 h-9 w-9 object-contain"
+              className="relative z-10 h-10 w-10 object-contain"
             />
           ) : (
-            <span className="relative z-10 text-sm font-black tracking-tight text-slate-950">
+            <span className="relative z-10 text-[15px] font-black tracking-tight text-slate-950">
               SF
             </span>
           )}
@@ -193,10 +193,10 @@ function BrandMark({
       </span>
 
       <span className="hidden min-w-0 leading-none sm:block">
-        <span className="block text-[11px] font-bold uppercase tracking-[0.22em] text-sky-700/80">
+        <span className="block text-[12px] font-bold uppercase tracking-[0.24em] text-sky-700/80">
           Suplementación
         </span>
-        <span className="mt-1 block text-[20px] font-black tracking-tight text-slate-950">
+        <span className="mt-1 block text-[22px] font-black tracking-tight text-slate-950">
           Formosa
         </span>
       </span>
@@ -370,7 +370,7 @@ export function Header({
 
         <div className="border-b border-slate-100">
           <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="grid h-[74px] grid-cols-[auto_1fr_auto] items-center gap-3 md:h-[78px] md:grid-cols-[1fr_auto_1fr]">
+            <div className="grid h-[80px] grid-cols-[auto_1fr_auto] items-center gap-3 md:h-[84px] md:grid-cols-[1fr_auto_1fr]">
               <div className="flex min-w-0 items-center gap-3 md:justify-self-start">
                 <div className="md:hidden">
                   <IconButton onClick={() => setMobileMenu(true)} ariaLabel="Abrir menú">
