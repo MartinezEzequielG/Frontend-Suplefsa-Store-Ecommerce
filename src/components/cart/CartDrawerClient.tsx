@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { formatPrice } from '@/lib/format';
 import { imageUrl } from '@/lib/backend';
+import CartRecommendations from './CartRecommendations';
 
 type CartItem = {
   id: number;
@@ -379,6 +380,12 @@ export default function CartDrawerClient() {
                 })}
               </ul>
             )}
+
+            <CartRecommendations
+              cartItems={items}
+              onAdded={loadCart}
+              onClose={close}
+            />
           </div>
 
           <footer className="border-t border-slate-200 bg-white px-4 py-4">
