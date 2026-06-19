@@ -31,23 +31,23 @@ type CartResponse = {
   items?: CartItem[];
 };
 
-function variantLabel(it: CartItem) {
+function variantLabel(item: CartItem) {
   const pairs =
-    it.productVariant?.options
-      ?.map((o) => {
-        const label = o.optionValue?.product?.name;
-        const value = o.optionValue?.value;
+    item.productVariant?.options
+      ?.map((option) => {
+        const label = option.optionValue?.product?.name;
+        const value = option.optionValue?.value;
 
         if (label && value) return `${label}: ${value}`;
         if (value) return value;
 
         return null;
       })
-      .filter(Boolean) || [];
+      .filter(Boolean) ?? [];
 
   if (pairs.length) return pairs.join(' / ');
 
-  return it.productVariant?.sku ?? null;
+  return item.productVariant?.sku ?? null;
 }
 
 function removeCartParam(pathname: string, searchParams: URLSearchParams) {
@@ -55,7 +55,23 @@ function removeCartParam(pathname: string, searchParams: URLSearchParams) {
   next.delete('cart');
 
   const qs = next.toString();
+
   return qs ? `${pathname}?${qs}` : pathname;
+}
+
+function getCartCount(items: CartItem[]) {
+  return items.reduce(
+    (sum, item) => sum + Number(item.quantity || 0),
+    0,
+  );
+}
+
+function emitCartCount(items: CartItem[]) {
+  window.dispatchEvent(
+    new CustomEvent('cart-count-updated', {
+      detail: { count: getCartCount(items) },
+    }),
+  );
 }
 
 export default function CartDrawerClient() {
@@ -77,7 +93,7 @@ export default function CartDrawerClient() {
     pathname?.startsWith('/checkout') ||
     pathname?.startsWith('/orders');
 
-  const items = cart?.items || [];
+  const items = cart?.items ?? [];
 
   const subtotal = useMemo(() => {
     return items.reduce(
@@ -94,11 +110,19 @@ export default function CartDrawerClient() {
 
     if (!res.ok) {
       setCart({ items: [] });
+      emitCartCount([]);
       return;
     }
 
     const data = await res.json();
-    setCart(data);
+    const nextItems = data?.items ?? [];
+
+    setCart({
+      ...data,
+      items: nextItems,
+    });
+
+    emitCartCount(nextItems);
   }, []);
 
   const close = useCallback(() => {
@@ -125,7 +149,9 @@ export default function CartDrawerClient() {
 
     window.addEventListener('open-cart-drawer', handler);
 
-    return () => window.removeEventListener('open-cart-drawer', handler);
+    return () => {
+      window.removeEventListener('open-cart-drawer', handler);
+    };
   }, [loadCart]);
 
   async function updateQuantity(itemId: number, quantity: number) {
@@ -133,12 +159,12 @@ export default function CartDrawerClient() {
 
     setPendingItemId(itemId);
 
-    const fd = new FormData();
-    fd.set('quantity', String(quantity));
+    const formData = new FormData();
+    formData.set('quantity', String(quantity));
 
     const res = await fetch(`/cart/actions/update?id=${itemId}&mode=json`, {
       method: 'POST',
-      body: fd,
+      body: formData,
       headers: { Accept: 'application/json' },
     });
 
@@ -203,18 +229,27 @@ export default function CartDrawerClient() {
         aria-hidden={!open}
       >
         <div className="flex h-full flex-col">
-          <header className="flex items-center justify-between border-b border-zinc-200 px-4 py-4">
+          <header className="flex items-center justify-between border-b border-slate-200 px-4 py-4">
             <div>
-              <h2 className="text-lg font-extrabold text-zinc-900">Tu carrito</h2>
-              <p className="text-xs text-zinc-500">
-                {items.length ? `${items.length} producto${items.length === 1 ? '' : 's'}` : 'Sin productos'}
+              <h2 className="text-lg font-extrabold text-slate-950">
+                Tu carrito
+              </h2>
+
+              <p className="text-xs text-slate-500">
+                {items.length
+                  ? `${items.length} producto${items.length === 1 ? '' : 's'}`
+                  : 'Sin productos'}
               </p>
             </div>
 
             <button
               type="button"
               onClick={close}
-              className="rounded-full border border-zinc-200 px-3 py-1.5 text-sm font-semibold"
+              className="
+                rounded-full border border-slate-200 px-3 py-1.5
+                text-sm font-semibold text-slate-700
+                transition hover:border-slate-300 hover:bg-slate-50
+              "
             >
               Cerrar
             </button>
@@ -222,74 +257,96 @@ export default function CartDrawerClient() {
 
           <div className="flex-1 overflow-y-auto px-4 py-4">
             {items.length === 0 ? (
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-5 text-center">
-                <p className="text-sm font-semibold text-zinc-900">Tu carrito está vacío.</p>
-                <p className="mt-1 text-xs text-zinc-500">Agregá productos para continuar.</p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-8 text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-200">
+                  <span className="text-xl" aria-hidden="true">
+                    🛒
+                  </span>
+                </div>
+
+                <p className="text-sm font-extrabold text-slate-950">
+                  Tu carrito está vacío
+                </p>
+
+                <p className="mx-auto mt-1 max-w-[240px] text-xs leading-5 text-slate-500">
+                  Agregá productos para continuar con tu compra.
+                </p>
 
                 <Link
                   href="/products"
                   onClick={close}
-                  className="mt-4 inline-flex rounded-lg bg-black px-4 py-2 text-sm font-semibold text-white"
+                  className="
+                    mt-5 inline-flex h-11 items-center justify-center rounded-full
+                    bg-slate-950 px-5 text-sm font-black !text-white
+                    transition hover:bg-sky-600 active:scale-[0.98]
+                  "
                 >
                   Ver catálogo
                 </Link>
               </div>
             ) : (
               <ul className="space-y-3">
-                {items.map((it) => {
-                  const img = it.product?.images?.[0]?.url;
-                  const label = variantLabel(it);
-                  const line = Number(it.unitPrice || 0) * Number(it.quantity || 0);
-                  const itemPending = pendingItemId === it.id || isPending;
+                {items.map((item) => {
+                  const image = item.product?.images?.[0]?.url;
+                  const label = variantLabel(item);
+                  const line =
+                    Number(item.unitPrice || 0) * Number(item.quantity || 0);
+                  const itemPending = pendingItemId === item.id || isPending;
 
                   return (
                     <li
-                      key={it.id}
-                      className="rounded-xl border border-zinc-200 bg-white p-3 shadow-sm"
+                      key={item.id}
+                      className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm"
                     >
                       <div className="flex gap-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={imageUrl(img || '/placeholder.svg')}
-                          alt={it.product?.name || 'Producto'}
-                          className="h-16 w-16 shrink-0 rounded-lg bg-zinc-100 object-cover"
+                          src={imageUrl(image || '/placeholder.svg')}
+                          alt={item.product?.name || 'Producto'}
+                          className="h-16 w-16 shrink-0 rounded-xl bg-slate-100 object-cover"
                         />
 
                         <div className="min-w-0 flex-1">
-                          <p className="line-clamp-2 text-sm font-bold text-zinc-900">
-                            {it.product?.name ?? 'Producto'}
+                          <p className="line-clamp-2 text-sm font-bold text-slate-950">
+                            {item.product?.name ?? 'Producto'}
                           </p>
 
                           {label ? (
-                            <p className="mt-0.5 text-xs text-zinc-500">
+                            <p className="mt-0.5 text-xs text-slate-500">
                               {label}
                             </p>
                           ) : null}
 
-                          <p className="mt-1 text-xs text-zinc-500">
-                            {formatPrice(it.unitPrice)} c/u
+                          <p className="mt-1 text-xs text-slate-500">
+                            {formatPrice(item.unitPrice)} c/u
                           </p>
 
                           <div className="mt-3 flex items-center justify-between gap-3">
-                            <div className="inline-flex items-center rounded-lg border border-zinc-200">
+                            <div className="inline-flex items-center rounded-xl border border-slate-200">
                               <button
                                 type="button"
-                                disabled={itemPending || it.quantity <= 1}
-                                onClick={() => updateQuantity(it.id, it.quantity - 1)}
-                                className="px-3 py-1.5 text-sm font-bold disabled:opacity-40"
+                                disabled={itemPending || item.quantity <= 1}
+                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                className="
+                                  px-3 py-1.5 text-sm font-bold text-slate-800
+                                  disabled:cursor-not-allowed disabled:opacity-40
+                                "
                               >
                                 −
                               </button>
 
-                              <span className="min-w-8 text-center text-sm font-semibold">
-                                {it.quantity}
+                              <span className="min-w-8 text-center text-sm font-semibold text-slate-950">
+                                {item.quantity}
                               </span>
 
                               <button
                                 type="button"
                                 disabled={itemPending}
-                                onClick={() => updateQuantity(it.id, it.quantity + 1)}
-                                className="px-3 py-1.5 text-sm font-bold disabled:opacity-40"
+                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                className="
+                                  px-3 py-1.5 text-sm font-bold text-slate-800
+                                  disabled:cursor-not-allowed disabled:opacity-40
+                                "
                               >
                                 +
                               </button>
@@ -298,17 +355,21 @@ export default function CartDrawerClient() {
                             <button
                               type="button"
                               disabled={itemPending}
-                              onClick={() => removeItem(it.id)}
-                              className="text-xs font-semibold text-red-600 disabled:opacity-40"
+                              onClick={() => removeItem(item.id)}
+                              className="
+                                text-xs font-semibold text-red-600
+                                disabled:cursor-not-allowed disabled:opacity-40
+                              "
                             >
                               Eliminar
                             </button>
                           </div>
                         </div>
 
-                        <div className="text-right">
-                          <p className="text-xs text-zinc-500">Subtotal</p>
-                          <p className="text-sm font-extrabold text-zinc-900">
+                        <div className="shrink-0 text-right">
+                          <p className="text-xs text-slate-500">Subtotal</p>
+
+                          <p className="text-sm font-extrabold text-slate-950">
                             {formatPrice(line)}
                           </p>
                         </div>
@@ -320,16 +381,20 @@ export default function CartDrawerClient() {
             )}
           </div>
 
-          <footer className="border-t border-zinc-200 bg-white px-4 py-4">
-            <div className="mb-3 space-y-2 text-sm">
+          <footer className="border-t border-slate-200 bg-white px-4 py-4">
+            <div className="mb-4 space-y-2 text-sm">
               <div className="flex items-center justify-between">
-                <span className="text-zinc-500">Subtotal</span>
-                <span className="font-bold text-zinc-900">{formatPrice(subtotal)}</span>
+                <span className="text-slate-500">Subtotal</span>
+                <span className="font-extrabold text-slate-950">
+                  {formatPrice(subtotal)}
+                </span>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-zinc-500">Envío</span>
-                <span className="font-semibold text-zinc-900">A convenir</span>
+                <span className="text-slate-500">Envío</span>
+                <span className="font-semibold text-slate-950">
+                  A convenir
+                </span>
               </div>
             </div>
 
@@ -337,27 +402,43 @@ export default function CartDrawerClient() {
               <button
                 type="button"
                 onClick={close}
-                className="rounded-lg border border-zinc-300 px-4 py-3 text-sm font-semibold"
+                className="
+                  h-12 rounded-xl border border-slate-300 bg-white px-4
+                  text-sm font-bold text-slate-800
+                  transition hover:border-slate-950 hover:bg-slate-50
+                  active:scale-[0.98]
+                "
               >
                 Seguir comprando
               </button>
 
-              <Link
-                href="/checkout"
-                className={`rounded-lg px-4 py-3 text-center text-sm font-extrabold text-white ${
-                  items.length ? 'bg-black' : 'pointer-events-none bg-zinc-300'
-                }`}
-              >
-                Finalizar compra
-              </Link>
+              {items.length ? (
+                <Link
+                  href="/checkout"
+                  onClick={close}
+                  className="
+                    flex h-12 items-center justify-center rounded-xl
+                    bg-slate-950 px-4 text-center text-sm font-black !text-white
+                    transition hover:bg-sky-600 active:scale-[0.98]
+                  "
+                >
+                  Finalizar compra
+                </Link>
+              ) : (
+                <span
+                  className="
+                    flex h-12 items-center justify-center rounded-xl
+                    bg-slate-200 px-4 text-center text-sm font-black text-slate-400
+                  "
+                >
+                  Finalizar compra
+                </span>
+              )}
             </div>
 
-            <Link
-              href="/cart"
-              className="mt-3 block text-center text-xs font-semibold text-zinc-500 underline"
-            >
-              Ver carrito completo
-            </Link>
+            <p className="mt-3 text-center text-[11px] font-medium text-slate-400">
+              Revisá tu pedido antes de confirmar.
+            </p>
           </footer>
         </div>
       </aside>
